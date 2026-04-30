@@ -72,13 +72,29 @@ const project = new Hono<{
         workspaceId: v.string(),
         icon: v.string(),
         slug: v.string(),
+        columns: v.optional(
+          v.array(
+            v.object({
+              name: v.string(),
+              slug: v.string(),
+              position: v.number(),
+              isFinal: v.boolean(),
+            }),
+          ),
+        ),
       }),
     ),
     workspaceAccess.fromBody(),
     async (c) => {
-      const { name, icon, slug } = c.req.valid("json");
+      const { name, icon, slug, columns } = c.req.valid("json");
       const workspaceId = c.get("workspaceId");
-      const newProject = await createProjectCtrl(workspaceId, name, icon, slug);
+      const newProject = await createProjectCtrl(
+        workspaceId,
+        name,
+        icon,
+        slug,
+        columns,
+      );
       return c.json(newProject);
     },
   )

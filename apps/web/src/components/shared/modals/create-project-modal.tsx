@@ -44,11 +44,38 @@ function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
   const [iconSearch, setIconSearch] = useState("");
   const queryClient = useQueryClient();
   const { data: workspace } = useActiveWorkspace();
+  const localizedColumns = [
+    {
+      name: t("tasks:status.to-do"),
+      slug: "to-do",
+      position: 0,
+      isFinal: false,
+    },
+    {
+      name: t("tasks:status.in-progress"),
+      slug: "in-progress",
+      position: 1,
+      isFinal: false,
+    },
+    {
+      name: t("tasks:status.in-review"),
+      slug: "in-review",
+      position: 2,
+      isFinal: false,
+    },
+    {
+      name: t("tasks:status.done"),
+      slug: "done",
+      position: 3,
+      isFinal: true,
+    },
+  ];
   const { mutateAsync } = useCreateProject({
     name,
     slug,
     workspaceId: workspace?.id ?? "",
     icon: selectedIcon,
+    columns: localizedColumns,
   });
   const SelectedIcon =
     icons[selectedIcon as keyof typeof icons] || icons.Layout;

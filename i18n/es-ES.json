@@ -1256,7 +1256,7 @@
 	"tasks": {
 		"status": {
 			"label": "Estado",
-			"to-do": "To Do",
+			"to-do": "Pendiente",
 			"in-progress": "En progreso",
 			"in-review": "En revisión",
 			"done": "Hecho",

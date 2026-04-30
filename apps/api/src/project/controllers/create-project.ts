@@ -1,7 +1,14 @@
 import db from "../../database";
 import { columnTable, projectTable } from "../../database/schema";
 
-export const DEFAULT_PROJECT_COLUMNS = [
+type ProjectColumnInput = {
+  name: string;
+  slug: string;
+  position: number;
+  isFinal: boolean;
+};
+
+export const DEFAULT_PROJECT_COLUMNS: readonly ProjectColumnInput[] = [
   { name: "To Do", slug: "to-do", position: 0, isFinal: false },
   { name: "In Progress", slug: "in-progress", position: 1, isFinal: false },
   { name: "In Review", slug: "in-review", position: 2, isFinal: false },
@@ -13,7 +20,11 @@ async function createProject(
   name: string,
   icon: string,
   slug: string,
+  columns?: ProjectColumnInput[],
 ) {
+  const columnsToInsert =
+    columns && columns.length > 0 ? columns : DEFAULT_PROJECT_COLUMNS;
+
   return db.transaction(async (tx) => {
     const [createdProject] = await tx
       .insert(projectTable)
@@ -26,7 +37,7 @@ async function createProject(
       .returning();
 
     if (createdProject) {
-      for (const col of DEFAULT_PROJECT_COLUMNS) {
+      for (const col of columnsToInsert) {
         await tx.insert(columnTable).values({
           projectId: createdProject.id,
           name: col.name,
