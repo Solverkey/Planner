@@ -16,6 +16,7 @@ import type { ExternalLink } from "@/types/external-link";
 import TaskDescription from "./task-description";
 import TaskRelations from "./task-relations";
 import TaskSubtasks from "./task-subtasks";
+import TaskTimeTracker from "./task-time-tracker";
 import TaskTitle from "./task-title";
 
 type TaskDetailsContentProps = {
@@ -87,6 +88,9 @@ export default function TaskDetailsContent({
           />
         </div>
       )}
+      <div className="mt-4">
+        <TaskTimeTracker taskId={taskId} />
+      </div>
       <div className="mt-4">
         <TaskSubtasks
           taskId={taskId}

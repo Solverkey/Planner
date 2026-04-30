@@ -4,8 +4,12 @@ import * as v from "valibot";
 import { timeEntrySchema } from "../schemas";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import createTimeEntry from "./controllers/create-time-entry";
+import deleteTimeEntry from "./controllers/delete-time-entry";
+import getActiveTimeEntry from "./controllers/get-active-time-entry";
 import getTimeEntriesByTaskId from "./controllers/get-time-entries";
 import getTimeEntry from "./controllers/get-time-entry";
+import startTimeEntry from "./controllers/start-time-entry";
+import stopTimeEntry from "./controllers/stop-time-entry";
 import updateTimeEntry from "./controllers/update-time-entry";
 
 const timeEntry = new Hono<{
@@ -13,6 +17,30 @@ const timeEntry = new Hono<{
     userId: string;
   };
 }>()
+  .get(
+    "/active",
+    describeRoute({
+      operationId: "getActiveTimeEntry",
+      tags: ["Time Entries"],
+      description:
+        "Get the currently running time entry for the signed-in user (if any)",
+      responses: {
+        200: {
+          description: "Active time entry or null",
+          content: {
+            "application/json": {
+              schema: resolver(v.nullable(timeEntrySchema)),
+            },
+          },
+        },
+      },
+    }),
+    async (c) => {
+      const userId = c.get("userId");
+      const active = await getActiveTimeEntry(userId);
+      return c.json(active);
+    },
+  )
   .get(
     "/task/:taskId",
     describeRoute({
@@ -57,6 +85,69 @@ const timeEntry = new Hono<{
       const { id } = c.req.valid("param");
       const timeEntry = await getTimeEntry(id);
       return c.json(timeEntry);
+    },
+  )
+  .post(
+    "/start",
+    describeRoute({
+      operationId: "startTimeEntry",
+      tags: ["Time Entries"],
+      description:
+        "Start a new time entry for a task. Auto-stops any other active entry of the user.",
+      responses: {
+        200: {
+          description: "Started time entry",
+          content: {
+            "application/json": { schema: resolver(timeEntrySchema) },
+          },
+        },
+      },
+    }),
+    validator(
+      "json",
+      v.object({
+        taskId: v.string(),
+        description: v.optional(v.string()),
+      }),
+    ),
+    workspaceAccess.fromTaskId(),
+    async (c) => {
+      const { taskId, description } = c.req.valid("json");
+      const userId = c.get("userId");
+      const started = await startTimeEntry({ taskId, userId, description });
+      return c.json(started);
+    },
+  )
+  .post(
+    "/stop",
+    describeRoute({
+      operationId: "stopTimeEntry",
+      tags: ["Time Entries"],
+      description:
+        "Stop the active time entry of the signed-in user. If `id` is provided, stops that one.",
+      responses: {
+        200: {
+          description: "Stopped time entry",
+          content: {
+            "application/json": { schema: resolver(timeEntrySchema) },
+          },
+        },
+      },
+    }),
+    validator(
+      "json",
+      v.object({
+        id: v.optional(v.string()),
+      }),
+    ),
+    async (c) => {
+      const body = c.req.valid("json");
+      const userId = c.get("userId");
+      const stopped = await stopTimeEntry({
+        userId,
+        timeEntryId: body.id,
+      });
+      return c.json(stopped);
     },
   )
   .post(
@@ -132,6 +223,29 @@ const timeEntry = new Hono<{
         description,
       });
       return c.json(timeEntry);
+    },
+  )
+  .delete(
+    "/:id",
+    describeRoute({
+      operationId: "deleteTimeEntry",
+      tags: ["Time Entries"],
+      description: "Delete a time entry by ID",
+      responses: {
+        200: {
+          description: "Deleted time entry",
+          content: {
+            "application/json": { schema: resolver(timeEntrySchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    workspaceAccess.fromTimeEntry(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const deleted = await deleteTimeEntry(id);
+      return c.json(deleted);
     },
   );
 
