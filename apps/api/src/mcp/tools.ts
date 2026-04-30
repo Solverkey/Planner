@@ -579,4 +579,482 @@ export function registerMcpTools(
         }),
       ),
   );
+
+  // =========================================================================
+  // Tasks (extra mutations)
+  // =========================================================================
+
+  server.registerTool(
+    "delete_task",
+    {
+      description:
+        "Delete a task by its ID. Cascades subtasks, comments, time entries.",
+      inputSchema: z.object({ taskId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
+          method: "DELETE",
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "update_task_priority",
+    {
+      description: "Update only the priority of a task.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        priority: prioritySchema,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/priority/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ priority: args.priority }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "update_task_assignee",
+    {
+      description:
+        "Assign or unassign a user to a task. Pass empty string to unassign.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        userId: z.string(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/assignee/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ userId: args.userId }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "update_task_due_date",
+    {
+      description: "Update only the due date of a task. Pass null to clear.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        dueDate: nullableOptionalIsoDateTimeSchema,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/due-date/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            dueDate: args.dueDate ?? undefined,
+          }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "update_task_title",
+    {
+      description: "Update only the title of a task.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        title: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/title/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ title: args.title }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "update_task_description",
+    {
+      description:
+        "Update only the description of a task (Markdown supported).",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        description: z.string(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/task/description/${encodeURIComponent(args.taskId)}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ description: args.description }),
+          },
+        ),
+      ),
+  );
+
+  // =========================================================================
+  // Comments
+  // =========================================================================
+
+  server.registerTool(
+    "update_task_comment",
+    {
+      description: "Update an existing comment (only the author).",
+      inputSchema: z.object({
+        commentId: nonEmptyString,
+        content: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/comment/${encodeURIComponent(args.commentId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ content: args.content }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "delete_task_comment",
+    {
+      description: "Delete a comment (only the author).",
+      inputSchema: z.object({ commentId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/comment/${encodeURIComponent(args.commentId)}`, {
+          method: "DELETE",
+        }),
+      ),
+  );
+
+  // =========================================================================
+  // Task relations (subtasks, blocks, related)
+  // =========================================================================
+
+  const relationTypeSchema = z.enum(["subtask", "blocks", "related"]);
+
+  server.registerTool(
+    "list_task_relations",
+    {
+      description:
+        "List all relations of a task (subtask, blocks, related). Includes both directions.",
+      inputSchema: z.object({ taskId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task-relation/${encodeURIComponent(args.taskId)}`, {
+          method: "GET",
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "create_task_relation",
+    {
+      description:
+        "Create a relation between two tasks. Use relationType='subtask' to make targetTask a child of sourceTask.",
+      inputSchema: z.object({
+        sourceTaskId: nonEmptyString,
+        targetTaskId: nonEmptyString,
+        relationType: relationTypeSchema,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json("/api/task-relation", {
+          method: "POST",
+          body: JSON.stringify({
+            sourceTaskId: args.sourceTaskId,
+            targetTaskId: args.targetTaskId,
+            relationType: args.relationType,
+          }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "delete_task_relation",
+    {
+      description: "Delete a single task relation by its ID.",
+      inputSchema: z.object({ relationId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/task-relation/${encodeURIComponent(args.relationId)}`,
+          { method: "DELETE" },
+        ),
+      ),
+  );
+
+  // -------------------------------------------------------------------------
+  // Subtasks (sugar over task + task-relation)
+  // -------------------------------------------------------------------------
+
+  server.registerTool(
+    "list_subtasks",
+    {
+      description:
+        "List subtasks of a task (children via task_relation type='subtask').",
+      inputSchema: z.object({ taskId: nonEmptyString }),
+    },
+    async (args) =>
+      run(async () => {
+        const relations = (await client.json(
+          `/api/task-relation/${encodeURIComponent(args.taskId)}`,
+          { method: "GET" },
+        )) as Array<Record<string, unknown>>;
+        return relations.filter(
+          (rel) =>
+            rel.relationType === "subtask" && rel.sourceTaskId === args.taskId,
+        );
+      }),
+  );
+
+  server.registerTool(
+    "create_subtask",
+    {
+      description:
+        "Create a child task and link it to a parent via a 'subtask' relation. Returns { task, relation }.",
+      inputSchema: z.object({
+        parentTaskId: nonEmptyString,
+        projectId: nonEmptyString,
+        title: nonEmptyString,
+        description: z.string().optional(),
+        priority: prioritySchema.optional(),
+        status: optionalNonEmptyString,
+        startDate: optionalIsoDateTimeSchema,
+        dueDate: optionalIsoDateTimeSchema,
+        userId: optionalNonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        const taskBody: Record<string, string | undefined> = {
+          title: args.title,
+          description: args.description ?? "",
+          priority: args.priority ?? "low",
+          status: args.status ?? "to-do",
+        };
+        if (args.startDate !== undefined) taskBody.startDate = args.startDate;
+        if (args.dueDate !== undefined) taskBody.dueDate = args.dueDate;
+        if (args.userId !== undefined) taskBody.userId = args.userId;
+        const childTask = (await client.json(
+          `/api/task/${encodeURIComponent(args.projectId)}`,
+          { method: "POST", body: JSON.stringify(taskBody) },
+        )) as { id?: string };
+        if (!childTask.id) {
+          throw new Error("Subtask creation: child task did not return an id.");
+        }
+        const relation = await client.json("/api/task-relation", {
+          method: "POST",
+          body: JSON.stringify({
+            sourceTaskId: args.parentTaskId,
+            targetTaskId: childTask.id,
+            relationType: "subtask",
+          }),
+        });
+        return { task: childTask, relation };
+      }),
+  );
+
+  server.registerTool(
+    "delete_subtask",
+    {
+      description:
+        "Delete a subtask. By default deletes only the relation; pass deleteTask=true to also delete the child task.",
+      inputSchema: z.object({
+        subtaskId: nonEmptyString.describe("ID of the child task"),
+        parentTaskId: nonEmptyString,
+        deleteTask: z.boolean().optional(),
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        const relations = (await client.json(
+          `/api/task-relation/${encodeURIComponent(args.parentTaskId)}`,
+          { method: "GET" },
+        )) as Array<{
+          id: string;
+          sourceTaskId: string;
+          targetTaskId: string;
+          relationType: string;
+        }>;
+        const rel = relations.find(
+          (r) =>
+            r.relationType === "subtask" &&
+            r.sourceTaskId === args.parentTaskId &&
+            r.targetTaskId === args.subtaskId,
+        );
+        let deletedRelation: unknown = null;
+        if (rel) {
+          deletedRelation = await client.json(
+            `/api/task-relation/${encodeURIComponent(rel.id)}`,
+            { method: "DELETE" },
+          );
+        }
+        let deletedTask: unknown = null;
+        if (args.deleteTask === true) {
+          deletedTask = await client.json(
+            `/api/task/${encodeURIComponent(args.subtaskId)}`,
+            { method: "DELETE" },
+          );
+        }
+        return { deletedRelation, deletedTask };
+      }),
+  );
+
+  // =========================================================================
+  // Time entries (time tracking)
+  // =========================================================================
+
+  server.registerTool(
+    "list_time_entries",
+    {
+      description: "List all time entries for a task (with userName joined).",
+      inputSchema: z.object({ taskId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/time-entry/task/${encodeURIComponent(args.taskId)}`, {
+          method: "GET",
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "get_active_time_entry",
+    {
+      description:
+        "Get the currently running time entry of the signed-in user (if any).",
+      inputSchema: z.object({}),
+    },
+    async () =>
+      run(() => client.json("/api/time-entry/active", { method: "GET" })),
+  );
+
+  server.registerTool(
+    "start_timer",
+    {
+      description:
+        "Start the timer on a task. Auto-stops any other active timer of the user.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        description: z.string().optional(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json("/api/time-entry/start", {
+          method: "POST",
+          body: JSON.stringify({
+            taskId: args.taskId,
+            ...(args.description !== undefined
+              ? { description: args.description }
+              : {}),
+          }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "stop_timer",
+    {
+      description:
+        "Stop the active timer of the signed-in user. Optionally pass a specific time entry id.",
+      inputSchema: z.object({
+        timeEntryId: optionalNonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json("/api/time-entry/stop", {
+          method: "POST",
+          body: JSON.stringify(
+            args.timeEntryId !== undefined ? { id: args.timeEntryId } : {},
+          ),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "update_time_entry",
+    {
+      description:
+        "Update an existing time entry (start/end times, description).",
+      inputSchema: z.object({
+        timeEntryId: nonEmptyString,
+        startTime: isoDateTimeSchema,
+        endTime: optionalIsoDateTimeSchema,
+        description: z.string().optional(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/time-entry/${encodeURIComponent(args.timeEntryId)}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            startTime: args.startTime,
+            ...(args.endTime !== undefined ? { endTime: args.endTime } : {}),
+            ...(args.description !== undefined
+              ? { description: args.description }
+              : {}),
+          }),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "delete_time_entry",
+    {
+      description: "Delete a time entry by its ID.",
+      inputSchema: z.object({ timeEntryId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/time-entry/${encodeURIComponent(args.timeEntryId)}`, {
+          method: "DELETE",
+        }),
+      ),
+  );
+
+  // =========================================================================
+  // Activity feed & workspace members (read-only helpers)
+  // =========================================================================
+
+  server.registerTool(
+    "list_task_activities",
+    {
+      description:
+        "List activity feed for a task (status changes, assignments, comments, time tracking…).",
+      inputSchema: z.object({ taskId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/activity/${encodeURIComponent(args.taskId)}`, {
+          method: "GET",
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "list_workspace_members",
+    {
+      description:
+        "List members of a workspace (id, name, email, image, role). Useful to find userId for assignments.",
+      inputSchema: z.object({ workspaceId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/workspace/${encodeURIComponent(args.workspaceId)}/members`,
+          { method: "GET" },
+        ),
+      ),
+  );
 }
