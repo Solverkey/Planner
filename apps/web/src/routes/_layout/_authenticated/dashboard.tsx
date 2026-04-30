@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
+import FloatingTimeTracker from "@/components/task/floating-time-tracker";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 
 export const Route = createFileRoute("/_layout/_authenticated/dashboard")({
@@ -18,6 +19,7 @@ function DashboardLayoutComponent() {
         hideAppName={!workspace?.name}
       />
       <Outlet />
+      <FloatingTimeTracker />
     </>
   );
 }

@@ -24,6 +24,7 @@ import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
 import deleteTask from "./controllers/delete-task";
 import exportTasks from "./controllers/export-tasks";
+import getMyTasks from "./controllers/get-my-tasks";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import importTasks from "./controllers/import-tasks";
@@ -211,6 +212,31 @@ const task = new Hono<{
       });
 
       return c.json(task);
+    },
+  )
+  .get(
+    "/me",
+    describeRoute({
+      operationId: "getMyTasks",
+      tags: ["Tasks"],
+      description:
+        "Get all tasks assigned to the signed-in user across accessible workspaces (excludes archived projects)",
+      responses: {
+        200: {
+          description: "List of tasks assigned to the user",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    async (c) => {
+      const userId = c.get("userId");
+      if (!userId) {
+        throw new HTTPException(401, { message: "Unauthorized" });
+      }
+      const tasks = await getMyTasks(userId);
+      return c.json(tasks);
     },
   )
   .get(

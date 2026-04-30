@@ -1043,6 +1043,16 @@ export function registerMcpTools(
   );
 
   server.registerTool(
+    "list_my_tasks",
+    {
+      description:
+        "List all tasks assigned to the signed-in user across accessible workspaces (excludes archived projects). Useful to find what to work on next or to switch the active timer.",
+      inputSchema: z.object({}),
+    },
+    async () => run(() => client.json("/api/task/me", { method: "GET" })),
+  );
+
+  server.registerTool(
     "list_workspace_members",
     {
       description:
