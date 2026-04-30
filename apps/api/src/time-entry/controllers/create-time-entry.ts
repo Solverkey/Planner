@@ -20,6 +20,15 @@ async function createTimeEntry({
   endTime?: Date;
   duration?: number;
 }) {
+  const computedDuration =
+    duration ??
+    (endTime
+      ? Math.max(
+          0,
+          Math.floor((endTime.getTime() - startTime.getTime()) / 1000),
+        )
+      : 0);
+
   const [createdTimeEntry] = await db
     .insert(timeEntryTable)
     .values({
@@ -29,7 +38,7 @@ async function createTimeEntry({
       description: description || "",
       startTime,
       endTime: endTime || null,
-      duration: duration || 0,
+      duration: computedDuration,
     })
     .returning();
 
