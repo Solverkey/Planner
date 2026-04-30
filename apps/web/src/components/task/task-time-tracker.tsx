@@ -1,4 +1,11 @@
-import { ChevronDown, ChevronRight, Pause, Play, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Pause,
+  Play,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
@@ -20,6 +27,7 @@ import useStopTimeEntry from "@/hooks/mutations/time-entry/use-stop-time-entry";
 import useGetActiveTimeEntry from "@/hooks/queries/time-entry/use-get-active-time-entry";
 import useGetTimeEntriesByTaskId from "@/hooks/queries/time-entry/use-get-time-entries";
 import { toast } from "@/lib/toast";
+import ManualTimeEntryDialog from "./manual-time-entry-dialog";
 
 type TaskTimeTrackerProps = {
   taskId: string;
@@ -65,6 +73,7 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
 
   const { data: entries = [], isLoading } = useGetTimeEntriesByTaskId(taskId);
   const { data: active } = useGetActiveTimeEntry();
@@ -202,28 +211,57 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
           </div>
         </div>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                variant={isActiveOnThisTask ? "destructive-outline" : "default"}
-                onClick={handleToggle}
-                disabled={isMutating}
-                aria-label={buttonLabel}
-              >
-                {isActiveOnThisTask ? (
-                  <Pause className="size-3.5" />
-                ) : (
-                  <Play className="size-3.5" />
-                )}
-                <span>{buttonLabel}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">{buttonTooltip}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-1.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={() => setIsManualOpen(true)}
+                  disabled={isMutating}
+                  aria-label={t("tasks:timeTracking.manual.openLabel")}
+                >
+                  <Plus className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                {t("tasks:timeTracking.manual.openTooltip")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant={
+                    isActiveOnThisTask ? "destructive-outline" : "default"
+                  }
+                  onClick={handleToggle}
+                  disabled={isMutating}
+                  aria-label={buttonLabel}
+                >
+                  {isActiveOnThisTask ? (
+                    <Pause className="size-3.5" />
+                  ) : (
+                    <Play className="size-3.5" />
+                  )}
+                  <span>{buttonLabel}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">{buttonTooltip}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
+
+      <ManualTimeEntryDialog
+        taskId={taskId}
+        open={isManualOpen}
+        onOpenChange={setIsManualOpen}
+      />
 
       <CollapsibleContent>
         <div className="mt-2 flex flex-col gap-1.5">

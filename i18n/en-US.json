@@ -1650,6 +1650,27 @@
 			"empty": "No time entries yet. Press Start to begin tracking.",
 			"unknownUser": "Unknown user",
 			"deleteEntry": "Delete entry",
+			"manual": {
+				"openLabel": "Add manual entry",
+				"openTooltip": "Add a time entry manually",
+				"dialogTitle": "Add manual time entry",
+				"dialogDescription": "Use this if you forgot to start the timer. Set the start and end time of the work you did.",
+				"startLabel": "Start",
+				"endLabel": "End",
+				"descriptionLabel": "Description",
+				"descriptionPlaceholder": "What did you work on? (optional)",
+				"durationLabel": "Duration",
+				"submit": "Add entry",
+				"errors": {
+					"missingTimes": "Please set both start and end times.",
+					"endBeforeStart": "End time must be after start time.",
+					"future": "Start and end time cannot be in the future."
+				},
+				"toast": {
+					"success": "Time entry added",
+					"failed": "Failed to add time entry"
+				}
+			},
 			"actions": {
 				"start": "Start",
 				"pause": "Pause",

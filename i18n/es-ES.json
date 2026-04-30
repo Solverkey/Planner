@@ -1639,6 +1639,27 @@
 			"empty": "Aún no hay entradas. Pulsa Iniciar para empezar a registrar.",
 			"unknownUser": "Usuario desconocido",
 			"deleteEntry": "Eliminar entrada",
+			"manual": {
+				"openLabel": "Añadir entrada manual",
+				"openTooltip": "Añadir una entrada de tiempo manual",
+				"dialogTitle": "Añadir entrada manual",
+				"dialogDescription": "Usa esto si olvidaste pulsar Iniciar. Indica la hora de inicio y de fin del trabajo realizado.",
+				"startLabel": "Inicio",
+				"endLabel": "Fin",
+				"descriptionLabel": "Descripción",
+				"descriptionPlaceholder": "¿En qué trabajaste? (opcional)",
+				"durationLabel": "Duración",
+				"submit": "Añadir entrada",
+				"errors": {
+					"missingTimes": "Indica las horas de inicio y fin.",
+					"endBeforeStart": "La hora de fin debe ser posterior a la de inicio.",
+					"future": "Las horas de inicio y fin no pueden estar en el futuro."
+				},
+				"toast": {
+					"success": "Entrada añadida",
+					"failed": "No se pudo añadir la entrada"
+				}
+			},
 			"actions": {
 				"start": "Iniciar",
 				"pause": "Pausar",

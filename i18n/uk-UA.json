@@ -1716,7 +1716,28 @@
 				"switch": "Currently tracking time on \"{{title}}\". Click to switch."
 			},
 			"trackingOn": "tracking on {{title}}",
-			"unknownUser": "Unknown user"
+			"unknownUser": "Unknown user",
+			"manual": {
+				"descriptionLabel": "Description",
+				"descriptionPlaceholder": "What did you work on? (optional)",
+				"dialogDescription": "Use this if you forgot to start the timer. Set the start and end time of the work you did.",
+				"dialogTitle": "Add manual time entry",
+				"durationLabel": "Duration",
+				"endLabel": "End",
+				"errors": {
+					"endBeforeStart": "End time must be after start time.",
+					"future": "Start and end time cannot be in the future.",
+					"missingTimes": "Please set both start and end times."
+				},
+				"openLabel": "Add manual entry",
+				"openTooltip": "Add a time entry manually",
+				"startLabel": "Start",
+				"submit": "Add entry",
+				"toast": {
+					"failed": "Failed to add time entry",
+					"success": "Time entry added"
+				}
+			}
 		}
 	},
 	"invitations": {

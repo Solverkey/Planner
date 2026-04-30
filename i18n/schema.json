@@ -6555,6 +6555,85 @@
 						"deleteEntry": {
 							"type": "string"
 						},
+						"manual": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"openLabel": {
+									"type": "string"
+								},
+								"openTooltip": {
+									"type": "string"
+								},
+								"dialogTitle": {
+									"type": "string"
+								},
+								"dialogDescription": {
+									"type": "string"
+								},
+								"startLabel": {
+									"type": "string"
+								},
+								"endLabel": {
+									"type": "string"
+								},
+								"descriptionLabel": {
+									"type": "string"
+								},
+								"descriptionPlaceholder": {
+									"type": "string"
+								},
+								"durationLabel": {
+									"type": "string"
+								},
+								"submit": {
+									"type": "string"
+								},
+								"errors": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"missingTimes": {
+											"type": "string"
+										},
+										"endBeforeStart": {
+											"type": "string"
+										},
+										"future": {
+											"type": "string"
+										}
+									},
+									"required": ["missingTimes", "endBeforeStart", "future"]
+								},
+								"toast": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"success": {
+											"type": "string"
+										},
+										"failed": {
+											"type": "string"
+										}
+									},
+									"required": ["success", "failed"]
+								}
+							},
+							"required": [
+								"openLabel",
+								"openTooltip",
+								"dialogTitle",
+								"dialogDescription",
+								"startLabel",
+								"endLabel",
+								"descriptionLabel",
+								"descriptionPlaceholder",
+								"durationLabel",
+								"submit",
+								"errors",
+								"toast"
+							]
+						},
 						"actions": {
 							"type": "object",
 							"additionalProperties": false,
@@ -6690,6 +6769,7 @@
 						"empty",
 						"unknownUser",
 						"deleteEntry",
+						"manual",
 						"actions",
 						"tooltip",
 						"toast",
