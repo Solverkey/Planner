@@ -1033,6 +1033,7 @@
 		"sidebar": {
 			"overview": "Overview",
 			"projects": "Projects",
+			"myTasks": "My tasks",
 			"members": "Members",
 			"invitations": "Invitations",
 			"more": "More"
@@ -1640,6 +1641,78 @@
 			"searchActions": "Search actions...",
 			"noActionsFound": "No actions found.",
 			"changeStatus": "Change Status"
+		},
+		"timeTracking": {
+			"title": "Time tracking",
+			"live": "live",
+			"trackingOn": "tracking on {{title}}",
+			"loadingEntries": "Loading entries…",
+			"empty": "No time entries yet. Press Start to begin tracking.",
+			"unknownUser": "Unknown user",
+			"deleteEntry": "Delete entry",
+			"actions": {
+				"start": "Start",
+				"pause": "Pause",
+				"switchAndStart": "Switch & start"
+			},
+			"tooltip": {
+				"start": "Start tracking time on this task",
+				"pause": "Pause the timer",
+				"switch": "Currently tracking time on \"{{title}}\". Click to switch."
+			},
+			"toast": {
+				"started": "Timer started",
+				"paused": "Timer paused",
+				"switched": "Switched timer to this task",
+				"switchedShort": "Switched timer",
+				"entryDeleted": "Time entry deleted",
+				"updateFailed": "Failed to update timer",
+				"pauseFailed": "Failed to pause timer",
+				"switchFailed": "Failed to switch timer",
+				"deleteFailed": "Failed to delete time entry"
+			},
+			"floating": {
+				"ariaLabel": "Active time tracker",
+				"openTask": "Open active task",
+				"activeTask": "Active task",
+				"switchTask": "Switch task",
+				"searchPlaceholder": "Search your tasks…",
+				"empty": {
+					"noTasks": "No other tasks assigned to you",
+					"noMatches": "No matching tasks"
+				},
+				"ariaPause": "Pause timer",
+				"ariaSwitch": "Switch task"
+			}
+		},
+		"myTasks": {
+			"pageTitle": "My tasks",
+			"summary": {
+				"tasks_one": "{{count}} task",
+				"tasks_other": "{{count}} tasks",
+				"across": "across",
+				"projects_one": "{{count}} project",
+				"projects_other": "{{count}} projects"
+			},
+			"filter": {
+				"showCompleted": "Show completed",
+				"hideCompleted": "Hide completed",
+				"noMatches": "No tasks match the current filter."
+			},
+			"empty": {
+				"title": "No tasks assigned to you",
+				"description": "When you get assigned to tasks in this workspace they will show up here, grouped by project."
+			},
+			"untitledProject": "Untitled project",
+			"tooltip": {
+				"start": "Start timer",
+				"switchAndStart": "Switch & start",
+				"pause": "Pause"
+			},
+			"aria": {
+				"startTimer": "Start timer",
+				"pauseTimer": "Pause timer"
+			}
 		}
 	},
 	"invitations": {

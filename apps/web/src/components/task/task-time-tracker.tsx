@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, Pause, Play, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,7 @@ function useNow(enabled: boolean) {
 }
 
 export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -95,21 +97,23 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
           id: active?.id,
           taskId,
         });
-        toast.success("Timer paused");
+        toast.success(t("tasks:timeTracking.toast.paused"));
         return;
       }
 
       if (isActiveElsewhere) {
         await startMutation.mutateAsync({ taskId });
-        toast.success("Switched timer to this task");
+        toast.success(t("tasks:timeTracking.toast.switched"));
         return;
       }
 
       await startMutation.mutateAsync({ taskId });
-      toast.success("Timer started");
+      toast.success(t("tasks:timeTracking.toast.started"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update timer",
+        error instanceof Error
+          ? error.message
+          : t("tasks:timeTracking.toast.updateFailed"),
       );
     }
   };
@@ -117,10 +121,12 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
   const handleDelete = async (entryId: string) => {
     try {
       await deleteMutation.mutateAsync({ id: entryId, taskId });
-      toast.success("Time entry deleted");
+      toast.success(t("tasks:timeTracking.toast.entryDeleted"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete time entry",
+        error instanceof Error
+          ? error.message
+          : t("tasks:timeTracking.toast.deleteFailed"),
       );
     }
   };
@@ -131,16 +137,18 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
     deleteMutation.isPending;
 
   const buttonLabel = isActiveOnThisTask
-    ? "Pause"
+    ? t("tasks:timeTracking.actions.pause")
     : isActiveElsewhere
-      ? "Switch & start"
-      : "Start";
+      ? t("tasks:timeTracking.actions.switchAndStart")
+      : t("tasks:timeTracking.actions.start");
 
   const buttonTooltip = isActiveElsewhere
-    ? `Currently tracking time on "${active?.taskTitle ?? "another task"}". Click to switch.`
+    ? t("tasks:timeTracking.tooltip.switch", {
+        title: active?.taskTitle ?? "",
+      })
     : isActiveOnThisTask
-      ? "Pause the timer"
-      : "Start tracking time on this task";
+      ? t("tasks:timeTracking.tooltip.pause")
+      : t("tasks:timeTracking.tooltip.start");
 
   const sortedEntries = useMemo(
     () =>
@@ -164,7 +172,7 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
               ) : (
                 <ChevronRight className="size-4" />
               )}
-              <span>Time tracking</span>
+              <span>{t("tasks:timeTracking.title")}</span>
             </button>
           </CollapsibleTrigger>
 
@@ -181,12 +189,14 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
             {isActiveOnThisTask && (
               <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                live
+                {t("tasks:timeTracking.live")}
               </span>
             )}
             {isActiveElsewhere && (
               <span className="text-[11px] text-muted-foreground truncate">
-                tracking on {active?.taskTitle ?? "another task"}
+                {t("tasks:timeTracking.trackingOn", {
+                  title: active?.taskTitle ?? "",
+                })}
               </span>
             )}
           </div>
@@ -219,13 +229,13 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
         <div className="mt-2 flex flex-col gap-1.5">
           {isLoading && (
             <p className="text-xs text-muted-foreground px-2 py-1">
-              Loading entries…
+              {t("tasks:timeTracking.loadingEntries")}
             </p>
           )}
 
           {!isLoading && sortedEntries.length === 0 && (
             <p className="text-xs text-muted-foreground px-2 py-1">
-              No time entries yet. Press Start to begin tracking.
+              {t("tasks:timeTracking.empty")}
             </p>
           )}
 
@@ -248,7 +258,7 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xs text-muted-foreground truncate">
-                    {entry.userName ?? "Unknown user"}
+                    {entry.userName ?? t("tasks:timeTracking.unknownUser")}
                   </span>
                   <span className="text-[11px] text-muted-foreground/80">
                     · {formatRelativeDate(entry.startTime)}
@@ -269,7 +279,7 @@ export default function TaskTimeTracker({ taskId }: TaskTimeTrackerProps) {
                     <Button
                       variant="ghost"
                       size="icon-xs"
-                      aria-label="Delete entry"
+                      aria-label={t("tasks:timeTracking.deleteEntry")}
                       onClick={() => handleDelete(entry.id)}
                       disabled={deleteMutation.isPending}
                     >

@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ListChecks, Pause, Play, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +35,7 @@ function formatDuration(totalSeconds: number) {
 }
 
 export default function FloatingTimeTracker() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: active } = useGetActiveTimeEntry();
   const stopMutation = useStopTimeEntry();
@@ -77,13 +79,14 @@ export default function FloatingTimeTracker() {
   const filteredTasks = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return switchableTasks;
-    return switchableTasks.filter((t) => {
-      const ref = `${t.projectSlug ?? ""}-${t.number ?? ""}`.toLowerCase();
+    return switchableTasks.filter((task) => {
+      const ref =
+        `${task.projectSlug ?? ""}-${task.number ?? ""}`.toLowerCase();
       return (
-        t.title.toLowerCase().includes(q) ||
+        task.title.toLowerCase().includes(q) ||
         ref.includes(q) ||
-        (t.projectName ?? "").toLowerCase().includes(q) ||
-        (t.workspaceName ?? "").toLowerCase().includes(q)
+        (task.projectName ?? "").toLowerCase().includes(q) ||
+        (task.workspaceName ?? "").toLowerCase().includes(q)
       );
     });
   }, [query, switchableTasks]);
@@ -96,10 +99,12 @@ export default function FloatingTimeTracker() {
         id: active.id,
         taskId: active.taskId,
       });
-      toast.success("Timer paused");
+      toast.success(t("tasks:timeTracking.toast.paused"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to pause timer",
+        error instanceof Error
+          ? error.message
+          : t("tasks:timeTracking.toast.pauseFailed"),
       );
     }
   };
@@ -107,11 +112,13 @@ export default function FloatingTimeTracker() {
   const handleSwitchToTask = async (taskId: string) => {
     try {
       await startMutation.mutateAsync({ taskId });
-      toast.success("Switched timer");
+      toast.success(t("tasks:timeTracking.toast.switchedShort"));
       setIsSwitcherOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to switch timer",
+        error instanceof Error
+          ? error.message
+          : t("tasks:timeTracking.toast.switchFailed"),
       );
     }
   };
@@ -134,14 +141,14 @@ export default function FloatingTimeTracker() {
   return (
     <section
       className="fixed bottom-4 right-4 z-50 max-w-[min(calc(100vw-2rem),22rem)]"
-      aria-label="Active time tracker"
+      aria-label={t("tasks:timeTracking.floating.ariaLabel")}
     >
       <div className="flex items-center gap-2 rounded-xl border bg-popover/95 backdrop-blur shadow-lg/10 px-3 py-2 not-dark:bg-clip-padding">
         <button
           type="button"
           onClick={handleOpenTask}
           className="flex items-center gap-2 min-w-0 text-left hover:opacity-90 transition-opacity"
-          aria-label="Open active task"
+          aria-label={t("tasks:timeTracking.floating.openTask")}
         >
           <span
             className="size-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"
@@ -152,7 +159,7 @@ export default function FloatingTimeTracker() {
               {formatDuration(liveSeconds)}
             </span>
             <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-              {active.taskTitle ?? "Active task"}
+              {active.taskTitle ?? t("tasks:timeTracking.floating.activeTask")}
             </span>
           </div>
         </button>
@@ -166,12 +173,14 @@ export default function FloatingTimeTracker() {
                   size="icon-sm"
                   onClick={handlePause}
                   disabled={stopMutation.isPending}
-                  aria-label="Pause timer"
+                  aria-label={t("tasks:timeTracking.floating.ariaPause")}
                 >
                   <Pause className="size-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Pause</TooltipContent>
+              <TooltipContent side="top">
+                {t("tasks:timeTracking.actions.pause")}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -183,13 +192,15 @@ export default function FloatingTimeTracker() {
                     <Button
                       variant="outline"
                       size="icon-sm"
-                      aria-label="Switch task"
+                      aria-label={t("tasks:timeTracking.floating.ariaSwitch")}
                     >
                       <ListChecks className="size-3.5" />
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="top">Switch task</TooltipContent>
+                <TooltipContent side="top">
+                  {t("tasks:timeTracking.floating.switchTask")}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
@@ -207,7 +218,9 @@ export default function FloatingTimeTracker() {
                     ref={inputRef}
                     size="sm"
                     className="pl-8"
-                    placeholder="Search your tasks…"
+                    placeholder={t(
+                      "tasks:timeTracking.floating.searchPlaceholder",
+                    )}
                     value={query}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setQuery(e.target.value)
@@ -228,8 +241,8 @@ export default function FloatingTimeTracker() {
                 {filteredTasks.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-6 px-2">
                     {switchableTasks.length === 0
-                      ? "No other tasks assigned to you"
-                      : "No matching tasks"}
+                      ? t("tasks:timeTracking.floating.empty.noTasks")
+                      : t("tasks:timeTracking.floating.empty.noMatches")}
                   </p>
                 ) : (
                   filteredTasks.map((task) => (

@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Inbox, Pause, Play } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,7 @@ type MyTasksViewProps = {
 };
 
 export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: tasks = [], isLoading } = useGetMyTasks();
   const { data: active } = useGetActiveTimeEntry();
@@ -71,7 +73,7 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const workspaceTasks = useMemo<MyTask[]>(
-    () => tasks.filter((t) => t.workspaceId === workspaceId),
+    () => tasks.filter((task) => task.workspaceId === workspaceId),
     [tasks, workspaceId],
   );
 
@@ -96,7 +98,7 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
       } else {
         map.set(key, {
           projectId: task.projectId,
-          projectName: task.projectName ?? "Untitled project",
+          projectName: task.projectName ?? t("tasks:myTasks.untitledProject"),
           projectSlug: task.projectSlug,
           projectIcon: task.projectIcon,
           tasks: [task],
@@ -107,10 +109,10 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
     return Array.from(map.values()).sort((a, b) =>
       a.projectName.localeCompare(b.projectName),
     );
-  }, [workspaceTasks, hideDone]);
+  }, [workspaceTasks, hideDone, t]);
 
   const totalCount = workspaceTasks.filter(
-    (t) => !hideDone || t.status !== "done",
+    (task) => !hideDone || task.status !== "done",
   ).length;
 
   const toggleProject = (projectId: string) => {
@@ -141,14 +143,20 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
           id: active?.id,
           taskId: task.id,
         });
-        toast.success("Timer paused");
+        toast.success(t("tasks:timeTracking.toast.paused"));
       } else {
         await startMutation.mutateAsync({ taskId: task.id });
-        toast.success(active ? "Switched timer" : "Timer started");
+        toast.success(
+          active
+            ? t("tasks:timeTracking.toast.switchedShort")
+            : t("tasks:timeTracking.toast.started"),
+        );
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update timer",
+        error instanceof Error
+          ? error.message
+          : t("tasks:timeTracking.toast.updateFailed"),
       );
     }
   };
@@ -175,10 +183,11 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
           <Inbox className="size-7 text-muted-foreground" />
         </div>
         <div className="space-y-1">
-          <h3 className="text-lg font-semibold">No tasks assigned to you</h3>
+          <h3 className="text-lg font-semibold">
+            {t("tasks:myTasks.empty.title")}
+          </h3>
           <p className="text-sm text-muted-foreground max-w-sm">
-            When you get assigned to tasks in this workspace they will show up
-            here, grouped by project.
+            {t("tasks:myTasks.empty.description")}
           </p>
         </div>
       </div>
@@ -189,21 +198,24 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
     <div className="flex flex-col">
       <div className="flex items-center justify-between gap-2 px-4 py-2 border-b text-xs">
         <span className="text-muted-foreground">
-          {totalCount} {totalCount === 1 ? "task" : "tasks"} across{" "}
-          {groups.length} {groups.length === 1 ? "project" : "projects"}
+          {t("tasks:myTasks.summary.tasks", { count: totalCount })}{" "}
+          {t("tasks:myTasks.summary.across")}{" "}
+          {t("tasks:myTasks.summary.projects", { count: groups.length })}
         </span>
         <Button
           variant={hideDone ? "outline" : "secondary"}
           size="xs"
           onClick={() => setHideDone((v) => !v)}
         >
-          {hideDone ? "Show completed" : "Hide completed"}
+          {hideDone
+            ? t("tasks:myTasks.filter.showCompleted")
+            : t("tasks:myTasks.filter.hideCompleted")}
         </Button>
       </div>
 
       {groups.length === 0 ? (
         <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-          No tasks match the current filter.
+          {t("tasks:myTasks.filter.noMatches")}
         </div>
       ) : (
         <div className="flex flex-col">
@@ -283,7 +295,7 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
                                   }
                                   size="sm"
                                 >
-                                  {task.priority}
+                                  {t(`tasks:priority.${task.priority}`)}
                                 </Badge>
                               )}
                             {task.dueDate && (
@@ -324,8 +336,8 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
                                     }
                                     aria-label={
                                       isActiveOnThisTask
-                                        ? "Pause timer"
-                                        : "Start timer"
+                                        ? t("tasks:myTasks.aria.pauseTimer")
+                                        : t("tasks:myTasks.aria.startTimer")
                                     }
                                   >
                                     {isActiveOnThisTask ? (
@@ -337,10 +349,12 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   {isActiveOnThisTask
-                                    ? "Pause"
+                                    ? t("tasks:myTasks.tooltip.pause")
                                     : active
-                                      ? "Switch & start"
-                                      : "Start timer"}
+                                      ? t(
+                                          "tasks:myTasks.tooltip.switchAndStart",
+                                        )
+                                      : t("tasks:myTasks.tooltip.start")}
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>

@@ -994,7 +994,9 @@
 				"pr_merged": "PR Fusionné",
 				"issue_opened": "Problème Ouvert",
 				"issue_closed": "Problème Fermé"
-			}
+			},
+			"giteaHeading": "Gitea",
+			"giteaHint": "When a Gitea webhook event occurs, move the linked task to a column."
 		},
 		"externalLinks": {
 			"resources": "Ressources",
@@ -1033,7 +1035,8 @@
 			"projects": "Projets",
 			"members": "Membres",
 			"invitations": "Invitations",
-			"more": "Plus"
+			"more": "Plus",
+			"myTasks": "My tasks"
 		},
 		"projectList": {
 			"viewProject": "Voir le projet",
@@ -1638,6 +1641,78 @@
 			"searchActions": "Rechercher des actions...",
 			"noActionsFound": "Aucune action trouvée.",
 			"changeStatus": "Changer le statut"
+		},
+		"myTasks": {
+			"aria": {
+				"pauseTimer": "Pause timer",
+				"startTimer": "Start timer"
+			},
+			"empty": {
+				"description": "When you get assigned to tasks in this workspace they will show up here, grouped by project.",
+				"title": "No tasks assigned to you"
+			},
+			"filter": {
+				"hideCompleted": "Hide completed",
+				"noMatches": "No tasks match the current filter.",
+				"showCompleted": "Show completed"
+			},
+			"pageTitle": "My tasks",
+			"summary": {
+				"across": "across",
+				"projects_one": "{{count}} project",
+				"projects_other": "{{count}} projects",
+				"tasks_one": "{{count}} task",
+				"tasks_other": "{{count}} tasks"
+			},
+			"tooltip": {
+				"pause": "Pause",
+				"start": "Start timer",
+				"switchAndStart": "Switch & start"
+			},
+			"untitledProject": "Untitled project"
+		},
+		"timeTracking": {
+			"actions": {
+				"pause": "Pause",
+				"start": "Start",
+				"switchAndStart": "Switch & start"
+			},
+			"deleteEntry": "Delete entry",
+			"empty": "No time entries yet. Press Start to begin tracking.",
+			"floating": {
+				"activeTask": "Active task",
+				"ariaLabel": "Active time tracker",
+				"ariaPause": "Pause timer",
+				"ariaSwitch": "Switch task",
+				"empty": {
+					"noMatches": "No matching tasks",
+					"noTasks": "No other tasks assigned to you"
+				},
+				"openTask": "Open active task",
+				"searchPlaceholder": "Search your tasks…",
+				"switchTask": "Switch task"
+			},
+			"live": "live",
+			"loadingEntries": "Loading entries…",
+			"title": "Time tracking",
+			"toast": {
+				"deleteFailed": "Failed to delete time entry",
+				"entryDeleted": "Time entry deleted",
+				"paused": "Timer paused",
+				"pauseFailed": "Failed to pause timer",
+				"started": "Timer started",
+				"switched": "Switched timer to this task",
+				"switchedShort": "Switched timer",
+				"switchFailed": "Failed to switch timer",
+				"updateFailed": "Failed to update timer"
+			},
+			"tooltip": {
+				"pause": "Pause the timer",
+				"start": "Start tracking time on this task",
+				"switch": "Currently tracking time on \"{{title}}\". Click to switch."
+			},
+			"trackingOn": "tracking on {{title}}",
+			"unknownUser": "Unknown user"
 		}
 	},
 	"invitations": {
