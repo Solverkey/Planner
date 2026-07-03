@@ -1,14 +1,22 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod/v4";
 import useInviteWorkspaceUser from "@/hooks/mutations/workspace-user/use-invite-workspace-user";
+import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
-import { Route } from "@/routes/_layout/_authenticated/dashboard/workspace/$workspaceId/members";
 import { Button } from "../ui/button";
-import { Dialog, DialogClose, DialogPopup, DialogTitle } from "../ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+} from "../ui/dialog";
 import {
   Form,
   FormControl,
@@ -34,7 +42,10 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   const { t } = useTranslation();
   const { mutateAsync } = useInviteWorkspaceUser();
   const queryClient = useQueryClient();
-  const { workspaceId } = Route.useParams();
+  const { data: workspace } = useActiveWorkspace();
+  const workspaceId = workspace?.id;
+  const { canInviteUsers } = useWorkspacePermission();
+  const canInvite = canInviteUsers();
 
   const form = useForm<TeamMemberFormValues>({
     resolver: standardSchemaResolver(teamMemberSchema),
@@ -44,6 +55,17 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   });
 
   const onSubmit = async ({ email }: TeamMemberFormValues) => {
+    if (!workspaceId) {
+      toast.error(t("team:inviteModal.error"));
+      return;
+    }
+    if (!canInvite) {
+      // Defense-in-depth: parent gates the trigger, but if the modal is
+      // somehow open without permission we refuse rather than firing a
+      // mutation the server will reject.
+      toast.error(t("team:inviteModal.error"));
+      return;
+    }
     try {
       await mutateAsync({ email, workspaceId, role: "member" }); // TODO: role and email
       await queryClient.refetchQueries({
@@ -62,9 +84,11 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   };
 
   const resetInviteTeamMember = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["workspace-users", workspaceId],
-    });
+    if (workspaceId) {
+      await queryClient.invalidateQueries({
+        queryKey: ["workspace-users", workspaceId],
+      });
+    }
     form.reset();
   };
 
@@ -76,64 +100,48 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   return (
     <Dialog open={open} onOpenChange={resetAndCloseModal}>
       <DialogPopup className="w-full max-w-md">
-        <div className="bg-card rounded-lg shadow-xl">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <DialogTitle className="text-lg font-semibold text-foreground">
-              {t("team:inviteModal.title")}
-            </DialogTitle>
-            <DialogClose
-              className="text-muted-foreground hover:text-foreground"
-              render={<button type="button" />}
-            >
-              <X size={20} />
-            </DialogClose>
-          </div>
+        <DialogHeader>
+          <DialogTitle>{t("team:inviteModal.title")}</DialogTitle>
+        </DialogHeader>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="p-4">
-              <div className="space-y-4">
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="block text-sm font-medium text-foreground mb-1">
-                          {t("team:inviteModal.emailLabel")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder={t("team:inviteModal.emailPlaceholder")}
-                            className="bg-card/50"
-                            autoFocus
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="contents">
+            <DialogPanel>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("team:inviteModal.emailLabel")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={t("team:inviteModal.emailPlaceholder")}
+                        autoFocus
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </DialogPanel>
 
-              <div className="flex justify-end gap-2 mt-6">
-                <DialogClose
-                  render={
-                    <Button
-                      className="bg-muted text-foreground hover:bg-accent"
-                      type="button"
-                    />
-                  }
-                >
-                  {t("common:actions.cancel")}
-                </DialogClose>
-                <Button type="submit">
-                  {t("team:inviteModal.sendInvitation")}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+            <DialogFooter>
+              <DialogClose
+                render={<Button variant="outline" size="sm" type="button" />}
+              >
+                {t("common:actions.cancel")}
+              </DialogClose>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!workspaceId || !canInvite}
+              >
+                {t("team:inviteModal.sendInvitation")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogPopup>
     </Dialog>
   );

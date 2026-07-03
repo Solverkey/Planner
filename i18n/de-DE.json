@@ -42,7 +42,8 @@
 			"macedonian": "Mazedonisch",
 			"french": "Französisch",
 			"spanish": "Spanisch",
-			"dutch": "Niederländisch"
+			"dutch": "Niederländisch",
+			"korean": "Koreanisch"
 		},
 		"people": {
 			"someone": "Jemand",
@@ -149,7 +150,11 @@
 			"oidcError": "Anmeldung mit OIDC fehlgeschlagen",
 			"googleError": "Anmeldung mit Google fehlgeschlagen",
 			"githubError": "Anmeldung mit GitHub fehlgeschlagen",
-			"discordError": "Anmeldung mit Discord fehlgeschlagen"
+			"discordError": "Anmeldung mit Discord fehlgeschlagen",
+			"errors": {
+				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
+				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
+			}
 		},
 		"providers": {
 			"google": "Google",
@@ -581,7 +586,9 @@
 				"keyShort": "Der Schlüssel muss mindestens 2 Zeichen lang sein",
 				"keyMax": "Der Schlüssel darf höchstens 8 Zeichen lang sein",
 				"iconRequired": "Symbol ist erforderlich"
-			}
+			},
+			"importExportTasks": "Import/Export",
+			"importExportTasksDescription": "Importieren und Exportieren von Aufgaben."
 		},
 		"projectIntegrations": {
 			"pageTitle": "Projektintegrationen",
@@ -645,7 +652,10 @@
 			"on": "Ein",
 			"off": "Aus",
 			"newColumnPlaceholder": "Neuer Spaltenname...",
-			"add": "Hinzufügen"
+			"add": "Hinzufügen",
+			"toastIconUpdated": "Spaltenicon aktualisiert",
+			"pickIconTitle": "Spaltenicon auswählen",
+			"searchIconsPlaceholder": "Icons suchen..."
 		},
 		"githubIntegration": {
 			"validation": {
@@ -1036,7 +1046,8 @@
 			"members": "Mitglieder",
 			"invitations": "Einladungen",
 			"more": "Mehr",
-			"myTasks": "My tasks"
+			"myTasks": "My tasks",
+			"backToBoard": "Zurück zum Board"
 		},
 		"projectList": {
 			"viewProject": "Projekt ansehen",
@@ -1152,6 +1163,10 @@
 				"title": "Zeiterfassung gestartet",
 				"contentWithTask": "Die Zeiterfassung für die Aufgabe \"{{taskTitle}}\" wurde gestartet",
 				"contentWithoutTask": "Die Zeiterfassung für eine Aufgabe wurde gestartet"
+			},
+			"task_mention": {
+				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		}
 	},
@@ -1251,7 +1266,9 @@
 					"yaml": "YAML"
 				}
 			}
-		}
+		},
+		"moved": "hat die Aufgabe von \"{{from}}\" nach \"{{to}}\" verschoben",
+		"created": "hat diese Aufgabe erstellt"
 	},
 	"tasks": {
 		"status": {
@@ -1278,7 +1295,9 @@
 		},
 		"common": {
 			"selectTask": "Aufgabe auswählen",
-			"loadingTask": "Aufgabe wird geladen..."
+			"loadingTask": "Aufgabe wird geladen...",
+			"taskNotFound": "Aufgabe nicht gefunden",
+			"taskNotFoundDescription": "Die gesuchte Aufgabe existiert nicht oder wurde gelöscht."
 		},
 		"detail": {
 			"subtaskOf": "Teilaufgabe von",
@@ -1399,7 +1418,8 @@
 			"selectTask": "Wähle eine Aufgabe zum Verknüpfen aus",
 			"types": {
 				"blocks": "blockiert",
-				"related": "steht in Beziehung zu"
+				"related": "steht in Beziehung zu",
+				"blocked_by": "blocked by"
 			}
 		},
 		"subtasks": {
@@ -1778,7 +1798,8 @@
 				"complete": "Abgeschlossen",
 				"inProgress": "In Bearbeitung"
 			},
-			"noDueDate": "Kein Fälligkeitsdatum"
+			"noDueDate": "Kein Fälligkeitsdatum",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one."
 		},
 		"search": {
 			"pageTitle": "Suche",
@@ -1818,7 +1839,8 @@
 		"roles": {
 			"owner": "Eigentümer",
 			"admin": "Admin",
-			"member": "Mitglied"
+			"member": "Mitglied",
+			"viewer": "Viewer"
 		},
 		"members": {
 			"pageTitle": "Mitglieder",
@@ -1853,7 +1875,9 @@
 			"removeSuccess": "Teammitglied erfolgreich entfernt",
 			"removeError": "Teammitglied konnte nicht entfernt werden",
 			"cancelInviteSuccess": "Einladung erfolgreich abgebrochen",
-			"cancelInviteError": "Einladung konnte nicht abgebrochen werden"
+			"cancelInviteError": "Einladung konnte nicht abgebrochen werden",
+			"roleUpdateError": "Failed to update role",
+			"roleUpdateSuccess": "Role updated"
 		}
 	},
 	"publicProject": {

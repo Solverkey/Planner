@@ -42,7 +42,8 @@
 			"macedonian": "Macédonien",
 			"french": "Français",
 			"spanish": "Espagnol",
-			"dutch": "Néerlandais"
+			"dutch": "Néerlandais",
+			"korean": "Coréen"
 		},
 		"people": {
 			"someone": "Quelqu'un",
@@ -149,7 +150,11 @@
 			"oidcError": "Échec de la connexion avec OIDC",
 			"googleError": "Échec de la connexion avec Google",
 			"githubError": "Échec de la connexion avec GitHub",
-			"discordError": "Échec de la connexion avec Discord"
+			"discordError": "Échec de la connexion avec Discord",
+			"errors": {
+				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
+				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
+			}
 		},
 		"providers": {
 			"google": "Google",
@@ -581,7 +586,9 @@
 				"keyShort": "La clé doit contenir au moins 2 caractères",
 				"keyMax": "La clé doit contenir au plus 8 caractères",
 				"iconRequired": "L'icône est requise"
-			}
+			},
+			"importExportTasks": "Importation/Exportation",
+			"importExportTasksDescription": "Importation/Exportation des Tâches"
 		},
 		"projectIntegrations": {
 			"pageTitle": "Intégrations du projet",
@@ -645,7 +652,10 @@
 			"on": "On",
 			"off": "Off",
 			"newColumnPlaceholder": "Nouveau nom de colonne...",
-			"add": "Ajouter"
+			"add": "Ajouter",
+			"toastIconUpdated": "Column icon updated",
+			"pickIconTitle": "Pick column icon",
+			"searchIconsPlaceholder": "Search icons..."
 		},
 		"githubIntegration": {
 			"validation": {
@@ -1036,7 +1046,8 @@
 			"members": "Membres",
 			"invitations": "Invitations",
 			"more": "Plus",
-			"myTasks": "My tasks"
+			"myTasks": "My tasks",
+			"backToBoard": "Retour au tableau"
 		},
 		"projectList": {
 			"viewProject": "Voir le projet",
@@ -1152,6 +1163,10 @@
 				"title": "Suivi du temps démarré",
 				"contentWithTask": "Le suivi du temps a démarré sur la tâche : {{taskTitle}}",
 				"contentWithoutTask": "Le suivi du temps a démarré sur une tâche"
+			},
+			"task_mention": {
+				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		}
 	},
@@ -1251,7 +1266,9 @@
 					"yaml": "YAML"
 				}
 			}
-		}
+		},
+		"created": "a créé cette tâche",
+		"moved": "a déplacé la tâche de \"{{from}}\" à \"{{to}}\""
 	},
 	"tasks": {
 		"status": {
@@ -1278,7 +1295,9 @@
 		},
 		"common": {
 			"selectTask": "Sélectionner une tâche",
-			"loadingTask": "Chargement de la tâche..."
+			"loadingTask": "Chargement de la tâche...",
+			"taskNotFound": "Tâche non trouvée",
+			"taskNotFoundDescription": "La tâche que vous recherchez n'existe pas ou a été supprimée."
 		},
 		"detail": {
 			"subtaskOf": "Sous-tâche de",
@@ -1399,7 +1418,8 @@
 			"selectTask": "Select a task to link",
 			"types": {
 				"blocks": "blocs",
-				"related": "relatif à"
+				"related": "relatif à",
+				"blocked_by": "blocked by"
 			}
 		},
 		"subtasks": {
@@ -1778,7 +1798,8 @@
 				"complete": "Terminé",
 				"inProgress": "En cours"
 			},
-			"noDueDate": "Pas de date d'échéance"
+			"noDueDate": "Pas de date d'échéance",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one."
 		},
 		"search": {
 			"pageTitle": "Rechercher",
@@ -1818,7 +1839,8 @@
 		"roles": {
 			"owner": "Propriétaire",
 			"admin": "Admin",
-			"member": "Membre"
+			"member": "Membre",
+			"viewer": "Viewer"
 		},
 		"members": {
 			"pageTitle": "Membres",
@@ -1853,7 +1875,9 @@
 			"removeSuccess": "Membre de l'équipe supprimé avec succès",
 			"removeError": "Échec de la suppression du membre de l'équipe",
 			"cancelInviteSuccess": "Invitation annulée avec succès",
-			"cancelInviteError": "Échec de l'annulation de l'invitation"
+			"cancelInviteError": "Échec de l'annulation de l'invitation",
+			"roleUpdateError": "Failed to update role",
+			"roleUpdateSuccess": "Role updated"
 		}
 	},
 	"publicProject": {

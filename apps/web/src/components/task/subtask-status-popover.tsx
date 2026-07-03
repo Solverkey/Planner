@@ -11,6 +11,7 @@ import { ShortcutNumber } from "@/components/ui/shortcut-number";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { toast } from "@/lib/toast";
@@ -33,9 +34,12 @@ export default function SubtaskStatusPopover({
   const statusOptions = columns.map((col) => ({
     value: col.slug,
     label: col.name,
+    icon: col.icon,
     isFinal: col.isFinal,
   }));
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
+  const { canManageTasks } = useWorkspacePermission();
+  const canEdit = canManageTasks();
 
   const allSameStatus =
     tasks.length > 0 && tasks.every((t) => t.status === tasks[0].status);
@@ -74,6 +78,8 @@ export default function SubtaskStatusPopover({
 
   useNumberedShortcuts(open, shortcutOptions);
 
+  if (!canEdit) return <>{children}</>;
+
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -87,7 +93,7 @@ export default function SubtaskStatusPopover({
               className="w-full justify-start gap-2 h-8 px-2 rounded-none first:rounded-t-md last:rounded-b-md"
               onClick={() => handleStatusChange(status.value)}
             >
-              {getColumnIcon(status.value, status.isFinal)}
+              {getColumnIcon(status.value, status.isFinal, status.icon)}
               <span className="text-sm">
                 {getStatusDisplayLabel(status.value, status.label)}
               </span>

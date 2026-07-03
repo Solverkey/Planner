@@ -183,6 +183,7 @@ Required variables:
 Optional:
 - `CORS_ORIGINS` - Comma-separated allowed origins (empty = allow all in dev)
 - `VITE_API_URL` - API URL for web dev (defaults to http://localhost:1337)
+- `REDIS_URL` - Redis connection string for multi-instance WebSocket broadcasts via Pub/Sub (omit for single-instance in-memory mode)
 - SSO providers (GitHub, Google, Discord, Custom OAuth/OIDC)
 - SMTP configuration
 
@@ -224,7 +225,7 @@ See `ENVIRONMENT_SETUP.md` for detailed configuration and troubleshooting.
 
 ## Important Notes
 
-- **Package Manager**: This project uses **pnpm** (pinned to `10.28.0` via `packageManager` field), not npm or yarn. Requires Node `>=18`
+- **Package Manager**: This project uses **pnpm** (pinned to `10.32.1` via `packageManager` field), not npm or yarn. Requires Node `>=18`
 - **Migrations**: Auto-run on API startup, stored in `apps/api/drizzle/`
 - **Development Ports**: API runs on 1337, web runs on 5173
 - **Hot Reload**: Both API and web have watch mode via `pnpm dev`

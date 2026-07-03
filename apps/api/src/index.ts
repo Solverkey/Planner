@@ -1,8 +1,9 @@
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { serve } from "@hono/node-server";
+import { createNodeWebSocket } from "@hono/node-ws";
 import type { Session, User } from "better-auth/types";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -19,20 +20,25 @@ import { auth } from "./auth";
 import column from "./column";
 import comment from "./comment";
 import config from "./config";
-import db, { schema } from "./database";
+import db, { getDatabase, schema } from "./database";
+import { prepareDatabaseStartup } from "./database/prepare-database-startup";
+import { waitForDatabase } from "./database/wait-for-database";
 import discordIntegration from "./discord-integration";
+import { eventContext } from "./events";
 import externalLink from "./external-link";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import giteaIntegration, { handleGiteaWebhookRoute } from "./gitea-integration";
 import githubIntegration, {
   handleGithubWebhookRoute,
 } from "./github-integration";
+import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
 import label from "./label";
 import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
+import oauth from "./oauth";
 import { initializePlugins } from "./plugins";
 import { migrateGitHubIntegration } from "./plugins/github/migration";
 import project from "./project";
@@ -62,12 +68,22 @@ import {
   normalizeApiServerUrl,
   normalizeEmptyAndEnumSchemas,
   normalizeEmptyRequiredArrays,
+  normalizeMalformedPropertySchemas,
   normalizeNullableSchemasForOpenApi30,
   normalizeOrganizationAuthOperations,
 } from "./utils/openapi-spec";
+import { seedDefaultWorkspaceRoles } from "./utils/seed-default-workspace-roles";
 import { validateWorkspaceAccess } from "./utils/validate-workspace-access";
 import workflowRule from "./workflow-rule";
 import workspace from "./workspace";
+import {
+  addConnection,
+  addUserConnection,
+  initializeWebSocketAdapter,
+  removeConnection,
+  removeUserConnection,
+  shutdownWebSocketAdapter,
+} from "./ws";
 
 type ApiKey = {
   id: string;
@@ -118,6 +134,8 @@ function buildContentDisposition(filename: string) {
 
 export function createApp() {
   const app = new Hono<AppVariables>();
+  const nodeWs = createNodeWebSocket({ app });
+  const { upgradeWebSocket, injectWebSocket } = nodeWs;
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(",")
         .map((origin) => origin.trim())
@@ -165,6 +183,36 @@ export function createApp() {
   api.get("/health", (c) => {
     return c.json({ status: "ok" });
   });
+
+  api.get(
+    "/instance/status",
+    describeRoute({
+      operationId: "getInstanceStatus",
+      tags: ["Instance"],
+      description:
+        "Public instance setup status. When hasUsers is false the next signup becomes the instance admin.",
+      security: [],
+      responses: {
+        200: {
+          description: "Instance status",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({
+                  hasUsers: v.boolean(),
+                  hasAdmin: v.boolean(),
+                }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    async (c) => {
+      const status = await getInstanceStatus();
+      return c.json(status);
+    },
+  );
 
   const publicProjectApi = api.get("/public-project/:id", async (c) => {
     const { id } = c.req.param();
@@ -333,7 +381,9 @@ export function createApp() {
             normalizeNullableSchemasForOpenApi30(
               normalizeEmptyAndEnumSchemas(
                 normalizeEmptyRequiredArrays(
-                  mergeOpenApiSpecs(honoSpec, normalizedAuthSpec),
+                  normalizeMalformedPropertySchemas(
+                    mergeOpenApiSpecs(honoSpec, normalizedAuthSpec),
+                  ),
                 ),
               ),
             ),
@@ -458,8 +508,15 @@ export function createApp() {
       console.error("API authentication failed:", error);
       throw new HTTPException(500, { message: "Internal Server Error" });
     }
-    return next();
+
+    const windowId = c.req.header("X-Kaneo-Window-Id");
+    const userId = c.get("userId");
+    const initiatorId = windowId ? `${userId}:${windowId}` : userId;
+
+    return eventContext.run({ initiatorId }, next);
   });
+
+  const oauthApi = api.route("/oauth", oauth);
 
   const projectApi = api.route("/project", project);
   const taskApi = api.route("/task", task);
@@ -508,11 +565,134 @@ export function createApp() {
     ),
   );
 
+  // User-scoped WebSocket endpoint — MUST be registered before /ws/:projectId
+  // so the literal path "user" isn't consumed by the param route.
+  api.get(
+    "/ws/user",
+    upgradeWebSocket(async (c) => {
+      try {
+        await authenticateApiRequest(c);
+      } catch (error) {
+        if (error instanceof HTTPException) {
+          throw error;
+        }
+        console.error("API authentication failed:", error);
+        throw new HTTPException(500, { message: "Internal Server Error" });
+      }
+
+      const userId = c.get("userId");
+      let conn: ReturnType<typeof addUserConnection> | null = null;
+
+      return {
+        onOpen(_evt, ws) {
+          if (userId) {
+            conn = addUserConnection(userId, ws);
+          }
+        },
+        onMessage(evt) {
+          try {
+            const raw =
+              typeof evt.data === "string"
+                ? evt.data
+                : Buffer.isBuffer(evt.data)
+                  ? evt.data.toString()
+                  : null;
+            if (raw) {
+              const msg = JSON.parse(raw) as { type?: string };
+              if (msg?.type === "ping") {
+                // keepalive — no-op
+              }
+            }
+          } catch {
+            // Ignore malformed messages
+          }
+        },
+        onClose() {
+          if (conn && userId) {
+            removeUserConnection(userId, conn);
+          }
+        },
+      };
+    }),
+  );
+
+  api.get(
+    "/ws/:projectId",
+    upgradeWebSocket(async (c) => {
+      const projectId = c.req.param("projectId");
+
+      try {
+        await authenticateApiRequest(c);
+      } catch (error) {
+        if (error instanceof HTTPException) {
+          throw error;
+        }
+        console.error("API authentication failed:", error);
+        throw new HTTPException(500, { message: "Internal Server Error" });
+      }
+
+      const userId = c.get("userId");
+
+      if (projectId) {
+        const [project] = await db
+          .select({ workspaceId: schema.projectTable.workspaceId })
+          .from(schema.projectTable)
+          .where(eq(schema.projectTable.id, projectId))
+          .limit(1);
+
+        if (!project) {
+          throw new HTTPException(401, { message: "Unauthorized" });
+        }
+
+        await validateWorkspaceAccess(userId, project.workspaceId);
+      }
+
+      const windowId = c.req.query("windowId");
+      const initiatorId = windowId ? `${userId}:${windowId}` : userId;
+      let conn: ReturnType<typeof addConnection> | null = null;
+
+      return {
+        onOpen(_evt, ws) {
+          if (projectId) {
+            conn = addConnection(projectId, ws, userId, initiatorId);
+          }
+        },
+        onMessage(evt) {
+          // Respond to client keepalive pings (sent every 30s to prevent
+          // Cloudflare from closing idle connections at 100s timeout)
+          try {
+            const raw =
+              typeof evt.data === "string"
+                ? evt.data
+                : Buffer.isBuffer(evt.data)
+                  ? evt.data.toString()
+                  : null;
+            if (raw) {
+              const msg = JSON.parse(raw) as { type?: string };
+              if (msg?.type === "ping") {
+                // No-op: receiving the ping is enough to satisfy Cloudflare.
+                // A pong response is optional but helps confirm liveness.
+              }
+            }
+          } catch {
+            // Ignore malformed messages
+          }
+        },
+        onClose() {
+          if (conn && projectId) {
+            removeConnection(projectId, conn);
+          }
+        },
+      };
+    }),
+  );
+
   app.route("/api", api);
 
   return {
     app,
     api,
+    injectWebSocket,
     activityApi,
     columnApi,
     commentApi,
@@ -537,31 +717,51 @@ export function createApp() {
     timeEntryApi,
     workflowRuleApi,
     workspaceApi,
+    oauthApi,
   };
 }
 
 export async function runStartupTasks() {
   const currentDir = dirname(fileURLToPath(import.meta.url));
 
-  await migrateWorkspaceUserEmail();
-  await migrateSessionColumn();
-  await migrateApiKeyReferenceId();
+  await prepareDatabaseStartup({
+    waitForDatabase: async () => {
+      await waitForDatabase({
+        query: async () => {
+          await getDatabase().execute(sql`SELECT 1`);
+        },
+      });
+    },
+    runStartupMigrations: async () => {
+      await migrateWorkspaceUserEmail();
+      await migrateSessionColumn();
 
-  console.log("🔄 Migrating database...");
-  await migrate(db, {
-    migrationsFolder: `${currentDir}/../drizzle`,
+      console.log("🔄 Migrating database...");
+      await migrate(getDatabase(), {
+        migrationsFolder: `${currentDir}/../drizzle`,
+      });
+      console.log("✅ Database migrated successfully!");
+    },
   });
-  console.log("✅ Database migrated successfully!");
+
+  // After Drizzle migrations: apikey table must exist so we can align columns
+  // with Better Auth (reference_id + nullable user_id).
+  await migrateApiKeyReferenceId();
 
   await migrateNotificationPreferencesSchema();
   await migrateGitHubIntegration();
   await migrateColumns();
+  await seedDefaultWorkspaceRoles();
 
   initializePlugins();
   initializeScheduler();
+  await initializeWebSocketAdapter();
 }
 
-export async function startServer(port = 1337) {
+export async function startServer(
+  injectWebSocket: ReturnType<typeof createNodeWebSocket>["injectWebSocket"],
+  port = 1337,
+) {
   try {
     await runStartupTasks();
   } catch (error) {
@@ -569,11 +769,9 @@ export async function startServer(port = 1337) {
     process.exit(1);
   }
 
-  process.on("SIGTERM", () => {
-    shutdownScheduler();
-  });
+  let shuttingDown = false;
 
-  serve(
+  const server = serve(
     {
       fetch: app.fetch,
       port,
@@ -584,11 +782,33 @@ export async function startServer(port = 1337) {
       );
     },
   );
+
+  injectWebSocket(server);
+
+  const gracefulShutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+
+    console.log("🛑 Shutting down gracefully...");
+    shutdownScheduler();
+    await shutdownWebSocketAdapter();
+    server.close();
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", () => {
+    void gracefulShutdown();
+  });
+
+  process.on("SIGINT", () => {
+    void gracefulShutdown();
+  });
 }
 
 const createdApp = createApp();
 const {
   app,
+  injectWebSocket,
   activityApi,
   columnApi,
   commentApi,
@@ -613,6 +833,7 @@ const {
   timeEntryApi,
   workflowRuleApi,
   workspaceApi,
+  oauthApi,
 } = createdApp;
 
 const isMainModule =
@@ -620,7 +841,7 @@ const isMainModule =
   import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isMainModule) {
-  void startServer();
+  void startServer(injectWebSocket);
 }
 
 export type AppType =
@@ -647,6 +868,7 @@ export type AppType =
   | typeof invitationApi
   | typeof workspaceApi
   | typeof publicProjectApi
-  | typeof invitationPublicApi;
+  | typeof invitationPublicApi
+  | typeof oauthApi;
 
 export default app;

@@ -76,6 +76,7 @@ export const timeEntrySchema = v.object({
   endTime: v.optional(v.date()),
   duration: v.nullable(v.number()),
   createdAt: v.date(),
+  updatedAt: v.date(),
 });
 
 export const notificationSchema = v.object({
@@ -92,12 +93,14 @@ export const notificationSchema = v.object({
     "time_entry_created",
     "due_date_reminder",
     "task_overdue",
+    "task_mention",
   ] as const),
   eventData: v.nullable(v.record(v.string(), v.unknown())),
   isRead: v.optional(v.boolean()),
   resourceId: v.optional(v.string()),
   resourceType: v.optional(v.picklist(["task", "workspace"] as const)),
   createdAt: v.date(),
+  updatedAt: v.date(),
 });
 
 export const notificationPreferenceWorkspaceRuleSchema = v.object({
@@ -253,4 +256,7 @@ export const configSchema = v.object({
   hasDiscordSignIn: v.nullable(v.boolean()),
   hasCustomOAuth: v.nullable(v.boolean()),
   hasGuestAccess: v.nullable(v.boolean()),
+  disableLoginForm: v.nullable(v.boolean()),
+  customOAuthAutoLogin: v.nullable(v.boolean()),
+  customOAuthLogoutUrl: v.nullable(v.string()),
 });

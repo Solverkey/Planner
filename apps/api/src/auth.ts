@@ -4,11 +4,22 @@ import {
   sendOtpEmail,
   sendWorkspaceInvitationEmail,
 } from "@kaneo/email";
+import {
+  ac,
+  DEFAULT_ROLE_NAMES,
+  defaultRolePayloads,
+  owner,
+} from "@kaneo/permissions";
 import bcrypt from "bcrypt";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
 import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
+import {
+  admin as adminPlugin,
   anonymous,
   bearer,
   deviceAuthorization,
@@ -19,13 +30,19 @@ import {
   openAPI,
   organization,
 } from "better-auth/plugins";
+import type { AccessControl } from "better-auth/plugins/access";
+import type { UserWithAnonymous } from "better-auth/plugins/anonymous";
 import { config } from "dotenv-mono";
-import { eq } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import db, { schema } from "./database";
 import { publishEvent } from "./events";
 import { checkRegistrationAllowed } from "./utils/check-registration-allowed";
+import { checkWorkspaceName } from "./utils/check-workspace-name";
 import { generateDemoName } from "./utils/generate-demo-name";
 import { getGithubSsoOAuthCredentials } from "./utils/github-sso-env";
+import { isCloud } from "./utils/is-cloud";
+import { isDisposableEmail } from "./utils/is-disposable-email";
+import { verifyTurnstile } from "./utils/verify-turnstile";
 
 config();
 
@@ -147,6 +164,7 @@ export const auth = betterAuth({
       workspace: schema.workspaceTable,
       workspace_member: schema.workspaceUserTable,
       invitation: schema.invitationTable,
+      workspace_role: schema.workspaceRoleTable,
       team: schema.teamTable,
       teamMember: schema.teamMemberTable,
       apikey: schema.apikeyTable,
@@ -160,6 +178,24 @@ export const auth = betterAuth({
         input: true,
         required: false,
       },
+    },
+  },
+  account: {
+    accountLinking: {
+      // Link an OAuth/OIDC sign-in to an existing account that shares the same
+      // email instead of failing with error=account_not_linked. The listed
+      // providers verify the email on their side, so they are trusted to link.
+      enabled: true,
+      trustedProviders: ["github", "google", "discord", "custom"],
+      // Kaneo does not require email verification on password signup, so the
+      // existing local account is usually unverified; allow linking to it so
+      // OIDC users are not locked out.
+      // SECURITY: with open password registration this means someone who
+      // pre-registered a victim's email (unverified) could be linked into by
+      // that victim's OIDC login. Instances that allow password signup
+      // alongside OIDC should set DISABLE_PASSWORD_REGISTRATION or require email
+      // verification.
+      requireLocalEmailVerified: false,
     },
   },
   emailAndPassword: {
@@ -226,8 +262,23 @@ export const auth = betterAuth({
       },
     }),
     organization({
-      // creatorRole: "admin", // maybe will want this "The role of the user who creates the organization."
-      // invitationLimit and other fields like this may be beneficial as well
+      // `ac` is created with a narrow `statement` shape (project/task/label/
+      // workspace + the default org statements), which makes its inferred
+      // `newRole` generic incompatible with better-auth's looser
+      // `AccessControl` type. Widen via an explicit cast so the plugin
+      // accepts our custom statement.
+      ac: ac as unknown as AccessControl,
+      // Only `owner` stays static so its permissions can never be edited away
+      // from the workspace creator. `viewer`, `member`, and `admin` are
+      // seeded into `workspace_role` per workspace and resolved via
+      // dynamic access control, so admins can fully override (replace) their
+      // permissions per workspace. See `seedDefaultWorkspaceRoles` + the
+      // afterCreateOrganization hook.
+      roles: { owner },
+      dynamicAccessControl: {
+        enabled: true,
+        maximumRolesPerOrganization: 25,
+      },
       teams: {
         enabled: true,
         maximumTeams: 10,
@@ -258,6 +309,12 @@ export const auth = betterAuth({
             organizationId: "workspaceId",
           },
         },
+        organizationRole: {
+          modelName: "workspace_role",
+          fields: {
+            organizationId: "workspaceId",
+          },
+        },
         team: {
           modelName: "team",
           fields: {
@@ -266,8 +323,56 @@ export const auth = betterAuth({
         },
       },
       allowUserToCreateOrganization: true,
+      // Better Auth defaults this to `true`, which blocks any user whose email
+      // is not verified from accepting/rejecting an invitation. Kaneo does not
+      // verify emails on signup (and guest/anonymous users are unverified by
+      // design), so leaving the default on breaks invitation acceptance for
+      // everyone. The invitation link id is the actual secret here, so gate on
+      // that rather than on email verification.
+      requireEmailVerificationOnInvitation: false,
       organizationHooks: {
+        beforeCreateOrganization: async ({ organization }) => {
+          const check = checkWorkspaceName(organization.name ?? "");
+          if (!check.ok) {
+            throw new APIError("BAD_REQUEST", { message: check.reason });
+          }
+        },
         afterCreateOrganization: async ({ organization, user }) => {
+          // Seed the editable default roles for this workspace. Each
+          // role's permissions are derived from the compiled-in defaults
+          // in `@kaneo/permissions`; admins can later replace them in the
+          // Roles UI. We skip names that somehow already exist (this hook
+          // is best-effort idempotent — the boot-time backfill is the
+          // belt-and-braces path).
+          try {
+            const existing = await db
+              .select({ role: schema.workspaceRoleTable.role })
+              .from(schema.workspaceRoleTable)
+              .where(
+                eq(schema.workspaceRoleTable.workspaceId, organization.id),
+              );
+            const taken = new Set(existing.map((r) => r.role));
+            const now = new Date();
+            const rows = DEFAULT_ROLE_NAMES.filter(
+              (name) => !taken.has(name),
+            ).map((name) => ({
+              workspaceId: organization.id,
+              role: name,
+              permission: JSON.stringify(defaultRolePayloads[name]),
+              createdAt: now,
+              updatedAt: now,
+            }));
+            if (rows.length > 0) {
+              await db.insert(schema.workspaceRoleTable).values(rows);
+            }
+          } catch (error) {
+            console.error(
+              "Failed to seed default workspace roles for workspace",
+              organization.id,
+              error,
+            );
+          }
+
           publishEvent("workspace.created", {
             workspaceId: organization.id,
             workspaceName: organization.name,
@@ -341,6 +446,10 @@ export const auth = betterAuth({
       validateClient: async (clientId) =>
         getDeviceAuthClientIds().has(clientId),
     }),
+    adminPlugin({
+      defaultRole: "user",
+      adminRoles: ["admin"],
+    }),
     openAPI(),
   ],
   session: {
@@ -349,10 +458,34 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
+  rateLimit: {
+    // Enable in cloud; self-hosted instances opt in by setting KANEO_CLOUD.
+    // Default better-auth rate-limit only kicks in for production; we keep the
+    // global limits conservative and tighten signup/invite via customRules.
+    enabled: isCloud(),
+    window: 10,
+    max: 100,
+    customRules: {
+      "/sign-up/email": { window: 60, max: 3 },
+      "/organization/invite-member": { window: 60, max: 5 },
+    },
+  },
   databaseHooks: {
     user: {
       create: {
         before: async (user) => {
+          // Allow the very first signup through even when registration
+          // is disabled — that's the instance-admin bootstrap flow.
+          // Otherwise a fresh instance with DISABLE_REGISTRATION=true
+          // could never be set up because `checkRegistrationAllowed`
+          // would reject the first user (qodo bot #3).
+          const [{ value: existingUserCount }] = await db
+            .select({ value: count() })
+            .from(schema.userTable);
+          if (existingUserCount === 0) {
+            return;
+          }
+
           const result = await checkRegistrationAllowed(user.email);
           if (!result.allowed) {
             throw new APIError("FORBIDDEN", {
@@ -360,11 +493,87 @@ export const auth = betterAuth({
             });
           }
         },
+        after: async (user) => {
+          // The anonymous() plugin creates ephemeral users for guest
+          // access; never promote one to instance admin even if no
+          // real admin exists yet. `isAnonymous` is contributed by the
+          // anonymous plugin's `additionalFields` and isn't part of the
+          // base User type, so we narrow through `UserWithAnonymous`.
+          const userWithAnonymous = user as Partial<UserWithAnonymous>;
+          if (userWithAnonymous.isAnonymous) {
+            return;
+          }
+
+          // Promote the first user to instance admin atomically.
+          //
+          // A previous version of this code checked the user count in
+          // the `before` hook and returned `role: "admin"`, but the
+          // count and the eventual INSERT happened in separate
+          // transactions, so two concurrent first-signups could both
+          // see count=0 and both become admins (qodo bot #5).
+          //
+          // We now run the check + promote inside a single transaction
+          // guarded by a Postgres advisory lock. Whichever transaction
+          // wins the lock first promotes its user; any concurrent
+          // transaction then sees totalUserCount > 1 and skips.
+          //
+          // Note: we count total users (not admins) so that upgrading
+          // an existing instance — where every existing user has
+          // role=NULL from the new column — doesn't promote the next
+          // signup to admin (qodo bot #4).
+          await db.transaction(async (tx) => {
+            await tx.execute(sql`SELECT pg_advisory_xact_lock(2026)`);
+
+            const totalRows = await tx
+              .select({ value: count() })
+              .from(schema.userTable);
+            const totalUserCount = totalRows[0]?.value ?? 0;
+
+            // This hook runs after the user row is inserted, so the
+            // just-created user is included in the count. If they are
+            // the only row in the table, this is a fresh-instance
+            // bootstrap and they get promoted to admin.
+            if (totalUserCount === 1) {
+              await tx
+                .update(schema.userTable)
+                .set({ role: "admin" })
+                .where(eq(schema.userTable.id, user.id));
+            }
+          });
+        },
       },
     },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // Block invite-member calls on cloud from anonymous users or to
+      // disposable-email addresses. The 2026-05-28 incident saw ~14k phishing
+      // invites sent from throwaway disposable-email signups; gating here
+      // shuts that path off without affecting self-hosted instances.
+      if (ctx.path === "/organization/invite-member" && isCloud()) {
+        // `before` hooks don't auto-populate ctx.context.session; load it
+        // explicitly. `disableRefresh` keeps this gate cheap — we only need
+        // the user record, not a session refresh side-effect.
+        const session = await getSessionFromCtx(ctx, {
+          disableRefresh: true,
+        }).catch(() => null);
+        const sessionUser = session?.user as
+          | { isAnonymous?: boolean | null }
+          | undefined;
+        if (sessionUser?.isAnonymous) {
+          throw new APIError("FORBIDDEN", {
+            message: "Guest accounts may not send workspace invitations.",
+          });
+        }
+        const inviteeEmail = (ctx.body?.email as string | undefined) ?? "";
+        if (inviteeEmail && isDisposableEmail(inviteeEmail)) {
+          throw new APIError("BAD_REQUEST", {
+            message:
+              "Invitations to disposable-email addresses are not allowed.",
+          });
+        }
+      }
+
       const isSignUpPath =
         ctx.path === "/sign-up/email" ||
         ctx.path.startsWith("/callback/") ||
@@ -374,16 +583,47 @@ export const auth = betterAuth({
         return;
       }
 
+      const userCountRows = await db
+        .select({ value: count() })
+        .from(schema.userTable);
+      const existingUserCount = userCountRows[0]?.value ?? 0;
+      const isInstanceAdminSetup = existingUserCount === 0;
+
       if (ctx.path === "/sign-up/email") {
-        if (isPasswordRegistrationDisabled) {
+        if (isPasswordRegistrationDisabled && !isInstanceAdminSetup) {
           throw new APIError("FORBIDDEN", {
             message:
               "Password registration is currently disabled. Please use a configured social or OIDC sign-in method.",
           });
         }
+
+        // Cloud-only abuse gates on password signup. Self-hosted instances
+        // leave KANEO_CLOUD/TURNSTILE_SECRET_KEY unset and skip both.
+        if (isCloud() && !isInstanceAdminSetup) {
+          const signupEmail = (ctx.body?.email as string | undefined) ?? "";
+          if (signupEmail && isDisposableEmail(signupEmail)) {
+            throw new APIError("BAD_REQUEST", {
+              message:
+                "Sign-up with disposable email addresses is not allowed.",
+            });
+          }
+
+          const turnstileToken =
+            (ctx.body?.turnstileToken as string | undefined) ??
+            ctx.headers?.get("x-turnstile-token") ??
+            null;
+          const remoteIp =
+            ctx.headers?.get("cf-connecting-ip") ??
+            ctx.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+            null;
+          const verdict = await verifyTurnstile(turnstileToken, remoteIp);
+          if (!verdict.ok) {
+            throw new APIError("FORBIDDEN", { message: verdict.reason });
+          }
+        }
       }
 
-      if (!isRegistrationDisabled) {
+      if (!isRegistrationDisabled || isInstanceAdminSetup) {
         return;
       }
 

@@ -162,6 +162,9 @@
 						},
 						"dutch": {
 							"type": "string"
+						},
+						"korean": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -171,7 +174,8 @@
 						"macedonian",
 						"french",
 						"spanish",
-						"dutch"
+						"dutch",
+						"korean"
 					]
 				},
 				"people": {
@@ -583,6 +587,22 @@
 						},
 						"discordError": {
 							"type": "string"
+						},
+						"errors": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"oauth_code_verification_failed": {
+									"type": "string"
+								},
+								"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"oauth_code_verification_failed",
+								"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_"
+							]
 						}
 					},
 					"required": [
@@ -606,7 +626,8 @@
 						"oidcError",
 						"googleError",
 						"githubError",
-						"discordError"
+						"discordError",
+						"errors"
 					]
 				},
 				"providers": {
@@ -2287,6 +2308,12 @@
 								"keyMax",
 								"iconRequired"
 							]
+						},
+						"importExportTasks": {
+							"type": "string"
+						},
+						"importExportTasksDescription": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -2319,7 +2346,9 @@
 						"toastUpdateError",
 						"toastDeleted",
 						"toastDeleteError",
-						"validation"
+						"validation",
+						"importExportTasks",
+						"importExportTasksDescription"
 					]
 				},
 				"projectIntegrations": {
@@ -2553,6 +2582,15 @@
 						},
 						"add": {
 							"type": "string"
+						},
+						"toastIconUpdated": {
+							"type": "string"
+						},
+						"pickIconTitle": {
+							"type": "string"
+						},
+						"searchIconsPlaceholder": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -2572,7 +2610,10 @@
 						"on",
 						"off",
 						"newColumnPlaceholder",
-						"add"
+						"add",
+						"toastIconUpdated",
+						"pickIconTitle",
+						"searchIconsPlaceholder"
 					]
 				},
 				"githubIntegration": {
@@ -4163,6 +4204,9 @@
 						},
 						"more": {
 							"type": "string"
+						},
+						"backToBoard": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -4171,7 +4215,8 @@
 						"myTasks",
 						"members",
 						"invitations",
-						"more"
+						"more",
+						"backToBoard"
 					]
 				},
 				"projectList": {
@@ -4612,6 +4657,19 @@
 								}
 							},
 							"required": ["title", "contentWithTask", "contentWithoutTask"]
+						},
+						"task_mention": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
 						}
 					},
 					"required": [
@@ -4619,7 +4677,8 @@
 						"workspace_created",
 						"task_status_changed",
 						"task_assignee_changed",
-						"time_entry_created"
+						"time_entry_created",
+						"task_mention"
 					]
 				}
 			},
@@ -5015,6 +5074,12 @@
 						"submitShortcut",
 						"editor"
 					]
+				},
+				"moved": {
+					"type": "string"
+				},
+				"created": {
+					"type": "string"
 				}
 			},
 			"required": [
@@ -5028,7 +5093,9 @@
 				"changedDueDate",
 				"changedTitle",
 				"githubUser",
-				"comment"
+				"comment",
+				"moved",
+				"created"
 			]
 		},
 		"tasks": {
@@ -5128,9 +5195,20 @@
 						},
 						"loadingTask": {
 							"type": "string"
+						},
+						"taskNotFound": {
+							"type": "string"
+						},
+						"taskNotFoundDescription": {
+							"type": "string"
 						}
 					},
-					"required": ["selectTask", "loadingTask"]
+					"required": [
+						"selectTask",
+						"loadingTask",
+						"taskNotFound",
+						"taskNotFoundDescription"
+					]
 				},
 				"detail": {
 					"type": "object",
@@ -5589,9 +5667,12 @@
 								},
 								"related": {
 									"type": "string"
+								},
+								"blocked_by": {
+									"type": "string"
 								}
 							},
-							"required": ["blocks", "related"]
+							"required": ["blocks", "related", "blocked_by"]
 						}
 					},
 					"required": [
@@ -6759,6 +6840,30 @@
 								"ariaPause",
 								"ariaSwitch"
 							]
+						},
+						"project": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"start": {
+									"type": "string"
+								},
+								"startTooltip": {
+									"type": "string"
+								},
+								"noPendingTask": {
+									"type": "string"
+								},
+								"startedOnTask": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"start",
+								"startTooltip",
+								"noPendingTask",
+								"startedOnTask"
+							]
 						}
 					},
 					"required": [
@@ -6773,7 +6878,8 @@
 						"actions",
 						"tooltip",
 						"toast",
-						"floating"
+						"floating",
+						"project"
 					]
 				},
 				"myTasks": {
@@ -7048,6 +7154,9 @@
 						},
 						"noDueDate": {
 							"type": "string"
+						},
+						"emptyDescriptionReadOnly": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -7061,7 +7170,8 @@
 						"emptyTitle",
 						"emptyDescription",
 						"projectStatus",
-						"noDueDate"
+						"noDueDate",
+						"emptyDescriptionReadOnly"
 					]
 				},
 				"search": {
@@ -7215,9 +7325,12 @@
 						},
 						"member": {
 							"type": "string"
+						},
+						"viewer": {
+							"type": "string"
 						}
 					},
-					"required": ["owner", "admin", "member"]
+					"required": ["owner", "admin", "member", "viewer"]
 				},
 				"members": {
 					"type": "object",
@@ -7331,6 +7444,12 @@
 						},
 						"cancelInviteError": {
 							"type": "string"
+						},
+						"roleUpdateSuccess": {
+							"type": "string"
+						},
+						"roleUpdateError": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -7349,7 +7468,9 @@
 						"removeSuccess",
 						"removeError",
 						"cancelInviteSuccess",
-						"cancelInviteError"
+						"cancelInviteError",
+						"roleUpdateSuccess",
+						"roleUpdateError"
 					]
 				}
 			},

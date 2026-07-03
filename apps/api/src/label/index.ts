@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { labelSchema } from "../schemas";
+import { requireWorkspacePermission } from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import assignLabelToTask from "./controllers/assign-label-to-task";
 import createLabel from "./controllers/create-label";
@@ -12,7 +13,11 @@ import getLabelsByWorkspaceId from "./controllers/get-labels-by-workspace-id";
 import unassignLabelFromTask from "./controllers/unassign-label-from-task";
 import updateLabel from "./controllers/update-label";
 
-const label = new Hono()
+const label = new Hono<{
+  Variables: {
+    userId: string;
+  };
+}>()
   .get(
     "/task/:taskId",
     describeRoute({
@@ -84,9 +89,11 @@ const label = new Hono()
       }),
     ),
     workspaceAccess.fromBody(),
+    requireWorkspacePermission({ label: ["create"] }),
     async (c) => {
       const { name, color, workspaceId, taskId } = c.req.valid("json");
-      const label = await createLabel(name, color, taskId, workspaceId);
+      const userId = c.get("userId");
+      const label = await createLabel(name, color, taskId, workspaceId, userId);
       return c.json(label);
     },
   )
@@ -131,10 +138,12 @@ const label = new Hono()
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ taskId: v.string() })),
     workspaceAccess.fromLabel(),
+    requireWorkspacePermission({ label: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { taskId } = c.req.valid("json");
-      const label = await assignLabelToTask(id, taskId);
+      const userId = c.get("userId");
+      const label = await assignLabelToTask(id, taskId, userId);
       return c.json(label);
     },
   )
@@ -155,9 +164,11 @@ const label = new Hono()
     }),
     validator("param", v.object({ id: v.string() })),
     workspaceAccess.fromLabel(),
+    requireWorkspacePermission({ label: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const label = await unassignLabelFromTask(id);
+      const userId = c.get("userId");
+      const label = await unassignLabelFromTask(id, userId);
       return c.json(label);
     },
   )
@@ -185,6 +196,7 @@ const label = new Hono()
       }),
     ),
     workspaceAccess.fromLabel(),
+    requireWorkspacePermission({ label: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { name, color } = c.req.valid("json");
@@ -209,9 +221,11 @@ const label = new Hono()
     }),
     validator("param", v.object({ id: v.string() })),
     workspaceAccess.fromLabel(),
+    requireWorkspacePermission({ label: ["delete"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const label = await deleteLabel(id);
+      const userId = c.get("userId");
+      const label = await deleteLabel(id, userId);
       return c.json(label);
     },
   );

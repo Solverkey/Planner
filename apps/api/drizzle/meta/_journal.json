@@ -197,6 +197,34 @@
 			"when": 1775245262351,
 			"tag": "0027_chilly_namorita",
 			"breakpoints": true
+		},
+		{
+			"idx": 28,
+			"version": "7",
+			"when": 1777245262351,
+			"tag": "0028_apikey_user_id_nullable",
+			"breakpoints": true
+		},
+		{
+			"idx": 29,
+			"version": "7",
+			"when": 1778000000000,
+			"tag": "0029_fk_supporting_indexes",
+			"breakpoints": true
+		},
+		{
+			"idx": 30,
+			"version": "7",
+			"when": 1778334176370,
+			"tag": "0030_smart_umar",
+			"breakpoints": true
+		},
+		{
+			"idx": 31,
+			"version": "7",
+			"when": 1778335540111,
+			"tag": "0031_strong_colleen_wing",
+			"breakpoints": true
 		}
 	]
 }

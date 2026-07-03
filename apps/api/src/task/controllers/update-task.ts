@@ -2,6 +2,8 @@ import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
+import { publishEvent } from "../../events";
+import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
 import { assertValidTaskStatus } from "../validate-task-fields";
 
 async function updateTask(
@@ -15,6 +17,7 @@ async function updateTask(
   priority: string,
   position: number,
   userId?: string,
+  currentUserId?: string,
 ) {
   const existingTask = await db.query.taskTable.findFirst({
     where: eq(taskTable.id, id),
@@ -56,6 +59,38 @@ async function updateTask(
     throw new HTTPException(500, {
       message: "Failed to update task",
     });
+  }
+
+  if (existingTask.status !== status) {
+    await publishEvent("task.status_changed", {
+      taskId: updatedTask.id,
+      projectId: updatedTask.projectId,
+      userId: currentUserId,
+      oldStatus: existingTask.status,
+      newStatus: status,
+      title: updatedTask.title,
+      assigneeId: updatedTask.userId,
+      type: "status_changed",
+    });
+
+    await publishEvent("task-relation.refresh", {
+      projectId: updatedTask.projectId,
+      userId: currentUserId,
+    });
+  }
+
+  await publishEvent("task.updated", {
+    taskId: updatedTask.id,
+    projectId: updatedTask.projectId,
+    title: updatedTask.title,
+    status: updatedTask.status,
+    userId: currentUserId,
+  });
+
+  if (existingTask.description !== description) {
+    deleteOrphanedAssets(existingTask.description, description, {
+      taskId: id,
+    }).catch(() => {});
   }
 
   return updatedTask;

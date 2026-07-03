@@ -8,10 +8,8 @@ import {
   assetTable,
   projectTable,
   taskTable,
-  userTable,
   workspaceTable,
 } from "../database/schema";
-import { publishEvent } from "../events";
 import { taskSchema } from "../schemas";
 import {
   assertTaskImageKeyMatchesContext,
@@ -19,6 +17,8 @@ import {
   isImageContentType,
   validateTaskAssetUploadInput,
 } from "../storage/s3";
+import { normalizeApiServerUrl } from "../utils/openapi-spec";
+import { requireWorkspacePermission } from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
@@ -188,6 +188,7 @@ const task = new Hono<{
       }),
     ),
     workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["create"] }),
     async (c) => {
       const { projectId } = c.req.param();
       const {
@@ -202,7 +203,8 @@ const task = new Hono<{
 
       const task = await createTask({
         projectId,
-        userId,
+        currentUserId: c.get("userId"),
+        userId: userId,
         title,
         description,
         startDate: startDate ? new Date(startDate) : undefined,
@@ -296,16 +298,17 @@ const task = new Hono<{
       }),
     ),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { destinationProjectId, destinationStatus } = c.req.valid("json");
-      const userId = c.get("userId");
+      const currentUserId = c.get("userId");
 
       const result = await moveTask({
         taskId: id,
         destinationProjectId,
         destinationStatus,
-        userId,
+        currentUserId,
       });
 
       return c.json(result);
@@ -342,11 +345,9 @@ const task = new Hono<{
       }),
     ),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
       const {
         title,
         description,
@@ -359,9 +360,7 @@ const task = new Hono<{
         userId,
       } = c.req.valid("json");
 
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
+      const currentUserId = c.get("userId");
 
       const task = await updateTask(
         id,
@@ -374,21 +373,8 @@ const task = new Hono<{
         priority,
         position,
         userId,
+        currentUserId,
       );
-
-      if (existingTask.status !== status) {
-        const user = c.get("userId");
-        await publishEvent("task.status_changed", {
-          taskId: task.id,
-          projectId: task.projectId,
-          userId: user,
-          oldStatus: existingTask.status,
-          newStatus: status,
-          title: task.title,
-          assigneeId: task.userId,
-          type: "status_changed",
-        });
-      }
 
       return c.json(task);
     },
@@ -443,19 +429,21 @@ const task = new Hono<{
             description: v.optional(v.string()),
             status: v.string(),
             priority: v.optional(v.string()),
-            startDate: v.optional(v.string()),
-            dueDate: v.optional(v.string()),
+            startDate: v.optional(v.nullable(v.string())),
+            dueDate: v.optional(v.nullable(v.string())),
             userId: v.optional(v.nullable(v.string())),
           }),
         ),
       }),
     ),
     workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["create"] }),
     async (c) => {
       const { projectId } = c.req.valid("param");
       const { tasks } = c.req.valid("json");
+      const currentUserId = c.get("userId");
 
-      const result = await importTasks(projectId, tasks);
+      const result = await importTasks(projectId, tasks, currentUserId);
 
       return c.json(result);
     },
@@ -477,10 +465,12 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["delete"] }),
     async (c) => {
       const { id } = c.req.valid("param");
 
-      const task = await deleteTask(id);
+      const currentUserId = c.get("userId");
+      const task = await deleteTask(id, currentUserId);
 
       return c.json(task);
     },
@@ -503,30 +493,13 @@ const task = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ status: v.string() })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { status } = c.req.valid("json");
-      const user = c.get("userId");
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
+      const currentUserId = c.get("userId");
 
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
-
-      const task = await updateTaskStatus({ id, status });
-
-      await publishEvent("task.status_changed", {
-        taskId: task.id,
-        projectId: task.projectId,
-        userId: user,
-        oldStatus: existingTask.status,
-        newStatus: status,
-        title: task.title,
-        assigneeId: task.userId,
-        type: "status_changed",
-      });
+      const task = await updateTaskStatus({ id, status, currentUserId });
 
       return c.json(task);
     },
@@ -549,29 +522,13 @@ const task = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ priority: v.picklist(VALID_PRIORITIES) })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { priority } = c.req.valid("json");
-      const user = c.get("userId");
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
+      const currentUserId = c.get("userId");
 
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
-
-      const task = await updateTaskPriority({ id, priority });
-
-      await publishEvent("task.priority_changed", {
-        taskId: task.id,
-        projectId: task.projectId,
-        userId: user,
-        oldPriority: existingTask.priority,
-        newPriority: priority,
-        title: task.title,
-        type: "priority_changed",
-      });
+      const task = await updateTaskPriority({ id, priority, currentUserId });
 
       return c.json(task);
     },
@@ -594,48 +551,13 @@ const task = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ userId: v.string() })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["assign"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { userId } = c.req.valid("json");
-      const user = c.get("userId");
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
+      const currentUserId = c.get("userId");
 
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
-
-      const task = await updateTaskAssignee({ id, userId });
-      const newAssigneeName = userId
-        ? (
-            await db
-              .select({ name: userTable.name })
-              .from(userTable)
-              .where(eq(userTable.id, userId))
-              .limit(1)
-          )[0]?.name
-        : undefined;
-
-      if (!userId) {
-        await publishEvent("task.unassigned", {
-          taskId: task.id,
-          userId: user,
-          title: task.title,
-          type: "unassigned",
-        });
-        return c.json(task);
-      }
-
-      await publishEvent("task.assignee_changed", {
-        taskId: task.id,
-        userId: user,
-        oldAssignee: existingTask.userId,
-        newAssignee: newAssigneeName,
-        newAssigneeId: userId,
-        title: task.title,
-        type: "assignee_changed",
-      });
+      const task = await updateTaskAssignee({ id, userId, currentUserId });
 
       return c.json(task);
     },
@@ -658,30 +580,16 @@ const task = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ dueDate: v.optional(v.string()) })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { dueDate = null } = c.req.valid("json");
-      const user = c.get("userId");
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
-
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
+      const currentUserId = c.get("userId");
 
       const task = await updateTaskDueDate({
         id,
         dueDate: dueDate ? new Date(dueDate) : null,
-      });
-
-      await publishEvent("task.due_date_changed", {
-        taskId: task.id,
-        userId: user,
-        oldDueDate: existingTask.dueDate,
-        newDueDate: dueDate,
-        title: task.title,
-        type: "due_date_changed",
+        currentUserId,
       });
 
       return c.json(task);
@@ -706,30 +614,13 @@ const task = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ title: v.string() })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { title } = c.req.valid("json");
-      const user = c.get("userId");
+      const currentUserId = c.get("userId");
 
-      // Fetch task BEFORE update to get old title
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
-
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
-
-      const task = await updateTaskTitle({ id, title });
-
-      await publishEvent("task.title_changed", {
-        taskId: task.id,
-        projectId: task.projectId,
-        userId: user,
-        oldTitle: existingTask.title,
-        newTitle: title,
-        type: "title_changed",
-      });
+      const task = await updateTaskTitle({ id, title, currentUserId });
 
       return c.json(task);
     },
@@ -762,6 +653,7 @@ const task = new Hono<{
       }),
     ),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { filename, contentType, size, surface } = c.req.valid("json");
@@ -845,6 +737,7 @@ const task = new Hono<{
       }),
     ),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { key, filename, contentType, size, surface } = c.req.valid("json");
@@ -936,9 +829,12 @@ const task = new Hono<{
               id: assetTable.id,
             });
 
+      const apiBaseUrl = normalizeApiServerUrl(
+        process.env.KANEO_API_URL || new URL(c.req.url).origin,
+      );
       return c.json({
         id: asset.id,
-        url: new URL(`/api/asset/${asset.id}`, c.req.url).toString(),
+        url: `${apiBaseUrl}/asset/${asset.id}`,
       });
     },
   )
@@ -960,29 +856,16 @@ const task = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ description: v.string() })),
     workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { description } = c.req.valid("json");
-      const user = c.get("userId");
+      const currentUserId = c.get("userId");
 
-      // Fetch task BEFORE update to get old description
-      const existingTask = await db.query.taskTable.findFirst({
-        where: eq(taskTable.id, id),
-      });
-
-      if (!existingTask) {
-        throw new HTTPException(404, { message: "Task not found" });
-      }
-
-      const task = await updateTaskDescription({ id, description });
-
-      await publishEvent("task.description_changed", {
-        taskId: task.id,
-        projectId: task.projectId,
-        userId: user,
-        oldDescription: existingTask.description,
-        newDescription: description,
-        type: "description_changed",
+      const task = await updateTaskDescription({
+        id,
+        description,
+        currentUserId,
       });
 
       return c.json(task);

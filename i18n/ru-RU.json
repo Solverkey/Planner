@@ -42,7 +42,8 @@
 			"macedonian": "Македонский",
 			"french": "Французский",
 			"spanish": "Испанский",
-			"dutch": "Нидерландский"
+			"dutch": "Нидерландский",
+			"korean": "Корейский"
 		},
 		"people": {
 			"someone": "Кто-то",
@@ -149,7 +150,11 @@
 			"oidcError": "Не удалось войти через OIDC",
 			"googleError": "Не удалось войти через Google",
 			"githubError": "Не удалось войти через GitHub",
-			"discordError": "Не удалось войти через Discord"
+			"discordError": "Не удалось войти через Discord",
+			"errors": {
+				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
+				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
+			}
 		},
 		"providers": {
 			"google": "Google",
@@ -581,7 +586,9 @@
 				"keyShort": "Ключ должен содержать не менее 2 символов",
 				"keyMax": "Ключ должен содержать не более 8 символов",
 				"iconRequired": "Иконка обязательна"
-			}
+			},
+			"importExportTasks": "Import/Export",
+			"importExportTasksDescription": "Import and export tasks."
 		},
 		"projectIntegrations": {
 			"pageTitle": "Интеграции проекта",
@@ -645,7 +652,10 @@
 			"on": "Вкл",
 			"off": "Выкл",
 			"newColumnPlaceholder": "Название новой колонки...",
-			"add": "Добавить"
+			"add": "Добавить",
+			"toastIconUpdated": "Column icon updated",
+			"pickIconTitle": "Pick column icon",
+			"searchIconsPlaceholder": "Search icons..."
 		},
 		"githubIntegration": {
 			"validation": {
@@ -1044,7 +1054,8 @@
 			"members": "Участники",
 			"invitations": "Приглашения",
 			"more": "Ещё",
-			"myTasks": "My tasks"
+			"myTasks": "My tasks",
+			"backToBoard": "Back to board"
 		},
 		"projectList": {
 			"viewProject": "Открыть проект",
@@ -1162,6 +1173,10 @@
 				"title": "Трекинг времени начат",
 				"contentWithTask": "Трекинг времени начат для задачи: {{taskTitle}}",
 				"contentWithoutTask": "Трекинг времени начат для задачи"
+			},
+			"task_mention": {
+				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		}
 	},
@@ -1261,7 +1276,9 @@
 					"yaml": "YAML"
 				}
 			}
-		}
+		},
+		"created": "created this task",
+		"moved": "moved task from \"{{from}}\" to \"{{to}}\""
 	},
 	"tasks": {
 		"status": {
@@ -1288,7 +1305,9 @@
 		},
 		"common": {
 			"selectTask": "Выбрать задачу",
-			"loadingTask": "Загрузка задачи..."
+			"loadingTask": "Загрузка задачи...",
+			"taskNotFound": "Task not found",
+			"taskNotFoundDescription": "The task you are looking for does not exist or has been deleted."
 		},
 		"detail": {
 			"subtaskOf": "Подзадача",
@@ -1409,7 +1428,8 @@
 			"selectTask": "Выберите задачу для связывания",
 			"types": {
 				"blocks": "блокирует",
-				"related": "связана с"
+				"related": "связана с",
+				"blocked_by": "blocked by"
 			}
 		},
 		"subtasks": {
@@ -1838,7 +1858,8 @@
 				"complete": "Завершён",
 				"inProgress": "В работе"
 			},
-			"noDueDate": "Без срока"
+			"noDueDate": "Без срока",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one."
 		},
 		"search": {
 			"pageTitle": "Поиск",
@@ -1880,7 +1901,8 @@
 		"roles": {
 			"owner": "Владелец",
 			"admin": "Администратор",
-			"member": "Участник"
+			"member": "Участник",
+			"viewer": "Viewer"
 		},
 		"members": {
 			"pageTitle": "Участники",
@@ -1915,7 +1937,9 @@
 			"removeSuccess": "Участник команды успешно удалён",
 			"removeError": "Не удалось удалить участника команды",
 			"cancelInviteSuccess": "Приглашение успешно отменено",
-			"cancelInviteError": "Не удалось отменить приглашение"
+			"cancelInviteError": "Не удалось отменить приглашение",
+			"roleUpdateError": "Failed to update role",
+			"roleUpdateSuccess": "Role updated"
 		}
 	},
 	"publicProject": {

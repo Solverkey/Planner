@@ -42,7 +42,8 @@
 			"macedonian": "Μακεδονικά",
 			"french": "Γαλλικά",
 			"spanish": "Ισπανικά",
-			"dutch": "Ολλανδικά"
+			"dutch": "Ολλανδικά",
+			"korean": "Κορεατικά"
 		},
 		"people": {
 			"someone": "Κάποιος",
@@ -149,7 +150,11 @@
 			"oidcError": "Αποτυχία σύνδεσης με OIDC",
 			"googleError": "Αποτυχία σύνδεσης με Google",
 			"githubError": "Αποτυχία σύνδεσης με GitHub",
-			"discordError": "Αποτυχία σύνδεσης με Discord"
+			"discordError": "Αποτυχία σύνδεσης με Discord",
+			"errors": {
+				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
+				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
+			}
 		},
 		"providers": {
 			"google": "Google",
@@ -581,7 +586,9 @@
 				"keyShort": "Το κλειδί πρέπει να έχει τουλάχιστον 2 χαρακτήρες",
 				"keyMax": "Το κλειδί πρέπει να έχει το πολύ 8 χαρακτήρες",
 				"iconRequired": "Το εικονίδιο είναι υποχρεωτικό"
-			}
+			},
+			"importExportTasks": "Εισαγωγή/Εξαγωγή",
+			"importExportTasksDescription": "Εισαγωγή/Εξαγωγή Εργασιών"
 		},
 		"projectIntegrations": {
 			"pageTitle": "Ενσωματώσεις έργου",
@@ -645,7 +652,10 @@
 			"on": "Ενεργό",
 			"off": "Ανενεργό",
 			"newColumnPlaceholder": "Όνομα νέας στήλης...",
-			"add": "Προσθήκη"
+			"add": "Προσθήκη",
+			"toastIconUpdated": "Column icon updated",
+			"pickIconTitle": "Pick column icon",
+			"searchIconsPlaceholder": "Search icons..."
 		},
 		"githubIntegration": {
 			"validation": {
@@ -1036,7 +1046,8 @@
 			"members": "Μέλη",
 			"invitations": "Προσκλήσεις",
 			"more": "Περισσότερα",
-			"myTasks": "My tasks"
+			"myTasks": "My tasks",
+			"backToBoard": "Επιστροφή στον πίνακα"
 		},
 		"projectList": {
 			"viewProject": "Προβολή έργου",
@@ -1152,6 +1163,10 @@
 				"title": "Η χρονομέτρηση ξεκίνησε",
 				"contentWithTask": "Η χρονομέτρηση ξεκίνησε για την εργασία: {{taskTitle}}",
 				"contentWithoutTask": "Η χρονομέτρηση ξεκίνησε για μια εργασία"
+			},
+			"task_mention": {
+				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		}
 	},
@@ -1251,7 +1266,9 @@
 					"yaml": "YAML"
 				}
 			}
-		}
+		},
+		"created": "δημιούργησε αυτή την εργασία",
+		"moved": "μετακίνησε την εργασία από \"{{from}}\" σε \"{{to}}\""
 	},
 	"tasks": {
 		"status": {
@@ -1278,7 +1295,9 @@
 		},
 		"common": {
 			"selectTask": "Επιλέξτε εργασία",
-			"loadingTask": "Φόρτωση εργασίας..."
+			"loadingTask": "Φόρτωση εργασίας...",
+			"taskNotFound": "Η εργασία δεν βρέθηκε",
+			"taskNotFoundDescription": "Η εργασία που αναζητάτε δεν υπάρχει ή έχει διαγραφεί."
 		},
 		"detail": {
 			"subtaskOf": "Υποεργασία του",
@@ -1399,7 +1418,8 @@
 			"selectTask": "Επιλέξτε εργασία για σύνδεση",
 			"types": {
 				"blocks": "μπλοκάρει",
-				"related": "σχετίζεται με"
+				"related": "σχετίζεται με",
+				"blocked_by": "blocked by"
 			}
 		},
 		"subtasks": {
@@ -1778,7 +1798,8 @@
 				"complete": "Ολοκληρωμένο",
 				"inProgress": "Σε εξέλιξη"
 			},
-			"noDueDate": "Χωρίς ημερομηνία λήξης"
+			"noDueDate": "Χωρίς ημερομηνία λήξης",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one."
 		},
 		"search": {
 			"pageTitle": "Αναζήτηση",
@@ -1818,7 +1839,8 @@
 		"roles": {
 			"owner": "Ιδιοκτήτης",
 			"admin": "Διαχειριστής",
-			"member": "Μέλος"
+			"member": "Μέλος",
+			"viewer": "Viewer"
 		},
 		"members": {
 			"pageTitle": "Μέλη",
@@ -1853,7 +1875,9 @@
 			"removeSuccess": "Το μέλος της ομάδας αφαιρέθηκε με επιτυχία",
 			"removeError": "Αποτυχία αφαίρεσης μέλους ομάδας",
 			"cancelInviteSuccess": "Η πρόσκληση ακυρώθηκε με επιτυχία",
-			"cancelInviteError": "Αποτυχία ακύρωσης πρόσκλησης"
+			"cancelInviteError": "Αποτυχία ακύρωσης πρόσκλησης",
+			"roleUpdateError": "Failed to update role",
+			"roleUpdateSuccess": "Role updated"
 		}
 	},
 	"publicProject": {

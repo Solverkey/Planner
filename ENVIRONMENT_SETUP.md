@@ -48,6 +48,29 @@ Kaneo supports many optional configuration options including:
 - SMTP configuration for email
 - Access control settings
 - CORS configuration
+- Redis for horizontal scaling
+- Private-network notification receivers (`KANEO_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS=true` lets ntfy/Gotify/webhook destinations resolve to private addresses; off by default to prevent SSRF)
+
+#### Redis Configuration
+
+Kaneo supports three Redis deployment modes for WebSocket Pub/Sub. When any Redis mode is configured, WebSocket broadcasts use Redis Pub/Sub, allowing multiple API instances to relay real-time updates. When none are set, an in-memory adapter is used (single-instance only).
+
+**Standalone (single server):**
+- `REDIS_URL` - Redis connection string (e.g., `redis://localhost:6379`)
+
+**Sentinel (high-availability with automatic failover):**
+- `REDIS_SENTINELS` - Comma-separated list of Sentinel nodes (e.g., `sentinel-1:26379,sentinel-2:26379,sentinel-3:26379`)
+- `REDIS_SENTINEL_MASTER_NAME` - Name of the Sentinel master group (default: `mymaster`)
+- `REDIS_SENTINEL_PASSWORD` - Password for Sentinel instances, if different from the Redis password (optional)
+- `REDIS_SENTINEL_TLS` - Set to `true` to enable TLS for Sentinel connections (default: `false`)
+
+**Cluster (horizontal sharding):**
+- `REDIS_CLUSTER_NODES` - Comma-separated list of cluster seed nodes (e.g., `node-1:6379,node-2:6379,node-3:6379`)
+
+**Shared (used by Sentinel and Cluster modes):**
+- `REDIS_PASSWORD` - Password for the Redis data nodes (used by both Sentinel and Cluster modes, not for Sentinel auth itself — use `REDIS_SENTINEL_PASSWORD` for that)
+
+> **Note:** Only one mode should be configured at a time. If multiple are set, the priority is: Cluster > Sentinel > Standalone.
 
 #### SMTP Configuration
 
@@ -62,6 +85,15 @@ For sending emails (workspace invitations, magic links, etc.), configure these v
 - `SMTP_IGNORE_TLS` - Ignore TLS certificate errors (default: `false`, set to `true` for self-signed certificates)
 
 > **Note:** If you're using an SMTP server with a self-signed or invalid TLS certificate, set `SMTP_IGNORE_TLS=true` to bypass certificate validation.
+
+#### Cloud-mode abuse mitigations
+
+Hosted multi-tenant instances should enable the cloud abuse gates. Self-hosted instances can leave these unset.
+
+- `KANEO_CLOUD` - Set to `true` to enable cloud-only protections: disposable-email signup block, Turnstile captcha enforcement, guest-account invite block, and tightened rate limits on `/sign-up/email` and `/organization/invite-member`.
+- `TURNSTILE_SECRET_KEY` - Cloudflare Turnstile secret key (API container, server-side verification). When unset, captcha verification is skipped.
+- `KANEO_TURNSTILE_SITE_KEY` - Cloudflare Turnstile site key, on the **web container**. The production web image bakes the literal placeholder `KANEO_TURNSTILE_SITE_KEY` into the bundle; `apps/web/env.sh` swaps it for the runtime value when the container starts.
+- `VITE_TURNSTILE_SITE_KEY` - Local dev only. Set in `apps/web/.env` when running `pnpm dev`; Vite reads this at build/dev time. Not used in the production image.
 
 For a complete list of all environment variables, their descriptions, and configuration options, see the [official documentation](https://kaneo.app/docs/core/installation/environment-variables).
 
@@ -113,6 +145,16 @@ For a complete list of all environment variables, their descriptions, and config
 2. **Update DATABASE_URL:**
    - Ensure the connection string format is correct
    - Check username, password, host, port, and database name
+
+3. **Match the hostname to where the API runs:**
+   - Use `postgres` only when the API container is on the same Docker Compose network as the Postgres service
+   - Use `localhost` when the API runs directly on your host machine
+   - If you see `getaddrinfo EAI_AGAIN postgres`, the API is trying to resolve the Compose hostname from the wrong network context
+
+4. **Use the right configuration mode:**
+   - For host-native development, prefer an explicit `DATABASE_URL`
+   - If you derive from `POSTGRES_*`, set `POSTGRES_HOST=localhost` when running the API on your host
+   - `POSTGRES_DB` and `POSTGRES_USER` by themselves do not switch Kaneo into derived connection mode
 
 ### Authentication Issues
 

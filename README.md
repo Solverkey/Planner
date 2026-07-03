@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://kaneo.app">
-    <img src="https://assets.kaneo.app/logo-text.png" alt="Kaneo's logo" width="300" />
+    <img src="https://assets.kaneo.app/logo-text.png" alt="Kaneo's logo" width="450" />
   </a>
 </p>
 
@@ -19,7 +19,7 @@
     <span> | </span>
     <a href="https://kaneo.app">Website</a>
     <span> | </span>
-    <a href="https://cloud.kaneo.app">Cloud (free)</a>
+    <a href="https://cloud.kaneo.app">Cloud</a>
     <span> | </span>
     <a href="https://discord.gg/rU4tSyhXXU">Discord</a>
   </h3>
@@ -42,13 +42,13 @@ We believe the best tools are **invisible**. They should amplify your team's nat
 - **Clean interface** that focuses on your work, not the tool
 - **Self-hosted** so your data stays yours
 - **Actually fast** because we care about performance
-- **Open source** and free forever
+- **Open source** with a permissive MIT license
 
 Learn more about Kaneo's features and capabilities in our [documentation](https://kaneo.app/docs/core).
 
 ## Sponsors
 
-Kaneo is open source and free forever. If you find it useful, consider [sponsoring the project](https://github.com/sponsors/andrejsshell) to help support ongoing development.
+Kaneo is open source. If you find it useful, consider [sponsoring the project](https://github.com/sponsors/andrejsshell) to help support ongoing development.
 
 ## Getting Started
 
@@ -67,7 +67,7 @@ Perfect for quick deployments and production setups where you want things to jus
 
 ### Quick Start with Docker Compose
 
-The fastest way to try Kaneo is with Docker Compose. This sets up the API, web interface, and PostgreSQL database:
+The fastest way to try Kaneo is with Docker Compose. This sets up Kaneo and PostgreSQL with a single Kaneo container:
 
 ```yaml
 services:
@@ -86,10 +86,10 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
-    image: ghcr.io/usekaneo/api:latest
+  kaneo:
+    image: ghcr.io/usekaneo/kaneo:latest
     ports:
-      - "1337:1337"
+      - "5173:5173"
     env_file:
       - .env
     depends_on:
@@ -97,21 +97,14 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  web:
-    image: ghcr.io/usekaneo/web:latest
-    ports:
-      - "5173:5173"
-    env_file:
-      - .env
-    depends_on:
-      - api
-    restart: unless-stopped
-
 volumes:
   postgres_data:
 ```
 
-Save this as `compose.yml`, create a `.env` file with your configuration (see the [documentation](https://kaneo.app/docs/core) for all required environment variables), run `docker compose up -d`, and open [http://localhost:5173](http://localhost:5173).
+Save this as `compose.yml`, copy `.env.sample` to `.env`, uncomment `KANEO_CLIENT_URL=http://localhost:5173`, and set `POSTGRES_PASSWORD=<password>` and `AUTH_SECRET=<output of openssl rand -hex 32>`, run `docker compose up -d`, and open [http://localhost:5173](http://localhost:5173).
+
+In Docker Compose, the bundled Kaneo container reaches PostgreSQL at the service hostname `postgres`.
+If you run the API on your host instead of inside Compose, use `localhost` or set `DATABASE_URL` explicitly.
 
 > **Important:** See our [full documentation](https://kaneo.app/docs/core) for detailed setup instructions, environment variable configuration, and troubleshooting guides.
 
@@ -123,7 +116,7 @@ For development, see our [Environment Setup Guide](ENVIRONMENT_SETUP.md) for det
 
 Kaneo requires several environment variables to be configured. The Docker Compose setup above handles the database automatically, but you'll need to configure environment variables for the API and web services.
 
-For complete configuration instructions, including all required environment variables, database setup for non-Docker deployments, and advanced settings, see the [documentation](https://kaneo.app/docs/core).
+For complete configuration instructions, including all required environment variables, database setup for non-Docker deployments, and advanced settings, see the [documentation](https://kaneo.app/docs/core). Advanced deployments can still use the separate `ghcr.io/usekaneo/api` and `ghcr.io/usekaneo/web` images.
 
 ## Kubernetes Deployment
 

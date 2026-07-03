@@ -7,6 +7,14 @@ import PageTitle from "@/components/page-title";
 import CreateProjectModal from "@/components/shared/modals/create-project-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,6 +29,7 @@ import icons from "@/constants/project-icons";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { formatDateMedium } from "@/lib/format";
 
 export const Route = createFileRoute(
@@ -37,8 +46,11 @@ function RouteComponent() {
   const { data: projects, isLoading } = useGetProjects({
     workspaceId,
   });
+  const { canCreateProjects } = useWorkspacePermission();
+  const canCreate = canCreateProjects();
 
   const handleCreateProject = () => {
+    if (!canCreate) return;
     setIsCreateProjectOpen(true);
   };
 
@@ -64,15 +76,17 @@ function RouteComponent() {
         <WorkspaceLayout
           title={t("workspace:projects.pageTitle")}
           headerActions={
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={handleCreateProject}
-              className="gap-1"
-            >
-              <Plus className="w-3 h-3" />
-              {t("workspace:projects.createProject")}
-            </Button>
+            canCreate ? (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={handleCreateProject}
+                className="gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                {t("workspace:projects.createProject")}
+              </Button>
+            ) : null
           }
         >
           <Table>
@@ -126,36 +140,40 @@ function RouteComponent() {
         <WorkspaceLayout
           title={t("workspace:projects.pageTitle")}
           headerActions={
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={handleCreateProject}
-              className="gap-1"
-            >
-              <Plus className="w-3 h-3" />
-              {t("workspace:projects.createProject")}
-            </Button>
-          }
-        >
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 mx-auto rounded-xl bg-muted flex items-center justify-center">
-                <LayoutGrid className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">
-                  {t("workspace:projects.emptyTitle")}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t("workspace:projects.emptyDescription")}
-                </p>
-              </div>
-              <Button onClick={handleCreateProject} className="gap-2 ">
-                <Plus className="w-4 h-4" />
+            canCreate ? (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={handleCreateProject}
+                className="gap-1"
+              >
+                <Plus className="w-3 h-3" />
                 {t("workspace:projects.createProject")}
               </Button>
-            </div>
-          </div>
+            ) : null
+          }
+        >
+          <Empty className="min-h-[60vh]">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LayoutGrid />
+              </EmptyMedia>
+              <EmptyTitle>{t("workspace:projects.emptyTitle")}</EmptyTitle>
+              <EmptyDescription>
+                {canCreate
+                  ? t("workspace:projects.emptyDescription")
+                  : t("workspace:projects.emptyDescriptionReadOnly")}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              {canCreate && (
+                <Button onClick={handleCreateProject}>
+                  <Plus />
+                  {t("workspace:projects.createProject")}
+                </Button>
+              )}
+            </EmptyContent>
+          </Empty>
         </WorkspaceLayout>
 
         <CreateProjectModal
@@ -172,15 +190,17 @@ function RouteComponent() {
       <WorkspaceLayout
         title={t("workspace:projects.pageTitle")}
         headerActions={
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={handleCreateProject}
-            className="gap-1"
-          >
-            <Plus className="w-3 h-3" />
-            {t("workspace:projects.createProject")}
-          </Button>
+          canCreate ? (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleCreateProject}
+              className="gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              {t("workspace:projects.createProject")}
+            </Button>
+          ) : null
         }
       >
         <Table>

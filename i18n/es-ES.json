@@ -42,7 +42,8 @@
 			"macedonian": "Macedonio",
 			"french": "Francés",
 			"spanish": "Español",
-			"dutch": "Dutch"
+			"dutch": "Dutch",
+			"korean": "Coreano"
 		},
 		"people": {
 			"someone": "Alguien",
@@ -149,7 +150,11 @@
 			"oidcError": "Error al iniciar sesión con OIDC",
 			"googleError": "Error al iniciar sesión con Google",
 			"githubError": "Error al iniciar sesión con GitHub",
-			"discordError": "Error al iniciar sesión con Discord"
+			"discordError": "Error al iniciar sesión con Discord",
+			"errors": {
+				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
+				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
+			}
 		},
 		"providers": {
 			"google": "Google",
@@ -492,7 +497,9 @@
 				"keyShort": "El identificador debe contener al menos 2 caracteres",
 				"keyMax": "El identificador debe contener como máximo 8 caracteres",
 				"iconRequired": "El icono es obligatorio"
-			}
+			},
+			"importExportTasks": "Importar/Exportar",
+			"importExportTasksDescription": "Importar/Exportar Tareas"
 		},
 		"projectIntegrations": {
 			"pageTitle": "Integraciones del Proyecto",
@@ -556,7 +563,10 @@
 			"on": "Activado",
 			"off": "Desactivado",
 			"newColumnPlaceholder": "Nombre de la nueva columna...",
-			"add": "Añadir"
+			"add": "Añadir",
+			"toastIconUpdated": "Column icon updated",
+			"pickIconTitle": "Pick column icon",
+			"searchIconsPlaceholder": "Search icons..."
 		},
 		"githubIntegration": {
 			"validation": {
@@ -1036,7 +1046,8 @@
 			"myTasks": "Mis tareas",
 			"members": "Miembros",
 			"invitations": "Invitaciones",
-			"more": "Más"
+			"more": "Más",
+			"backToBoard": "Volver al tablero"
 		},
 		"projectList": {
 			"viewProject": "Ver Proyecto",
@@ -1152,6 +1163,10 @@
 				"title": "Monitoreo de tiempo activado",
 				"contentWithTask": "El monitoreo de la tarea se ha activado para: {{taskTitle}}",
 				"contentWithoutTask": "Se ha activado el monitoreo de una tarea"
+			},
+			"task_mention": {
+				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		}
 	},
@@ -1251,12 +1266,14 @@
 					"yaml": "YAML"
 				}
 			}
-		}
+		},
+		"created": "ha creado esta tarea",
+		"moved": "ha movido la tarea de \"{{from}}\" a \"{{to}}\""
 	},
 	"tasks": {
 		"status": {
 			"label": "Estado",
-			"to-do": "Pendiente",
+			"to-do": "To Do",
 			"in-progress": "En progreso",
 			"in-review": "En revisión",
 			"done": "Hecho",
@@ -1278,7 +1295,9 @@
 		},
 		"common": {
 			"selectTask": "Seleccionar tarea",
-			"loadingTask": "Cargando tarea..."
+			"loadingTask": "Cargando tarea...",
+			"taskNotFound": "Tarea no encontrada",
+			"taskNotFoundDescription": "La tarea que buscas no existe o ha sido eliminada."
 		},
 		"detail": {
 			"subtaskOf": "Subtarea de",
@@ -1399,7 +1418,8 @@
 			"selectTask": "Selecciona una tarea para vincular",
 			"types": {
 				"blocks": "bloquea",
-				"related": "relacionada con"
+				"related": "relacionada con",
+				"blocked_by": "blocked by"
 			}
 		},
 		"subtasks": {
@@ -1778,7 +1798,8 @@
 				"complete": "Completado",
 				"inProgress": "En progreso"
 			},
-			"noDueDate": "Sin fecha de vencimiento"
+			"noDueDate": "Sin fecha de vencimiento",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one."
 		},
 		"search": {
 			"pageTitle": "Buscar",
@@ -1818,7 +1839,8 @@
 		"roles": {
 			"owner": "Propietario",
 			"admin": "Admin",
-			"member": "Miembro"
+			"member": "Miembro",
+			"viewer": "Viewer"
 		},
 		"members": {
 			"pageTitle": "Miembros",
@@ -1853,7 +1875,9 @@
 			"removeSuccess": "Miembro eliminado del equipo correctamente",
 			"removeError": "Error al eliminar miembro del equipo",
 			"cancelInviteSuccess": "Invitación cancelada correctamente",
-			"cancelInviteError": "Error al cancelar invitación"
+			"cancelInviteError": "Error al cancelar invitación",
+			"roleUpdateError": "Failed to update role",
+			"roleUpdateSuccess": "Role updated"
 		}
 	},
 	"publicProject": {

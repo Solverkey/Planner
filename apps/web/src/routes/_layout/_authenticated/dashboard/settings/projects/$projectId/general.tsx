@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import PageTitle from "@/components/page-title";
+import { TasksImportExport } from "@/components/project/tasks-import-export.tsx";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -38,10 +39,12 @@ import { Separator } from "@/components/ui/separator";
 import icons from "@/constants/project-icons";
 import useDeleteProject from "@/hooks/mutations/project/use-delete-project";
 import useUpdateProject from "@/hooks/mutations/project/use-update-project";
-import useGetProject from "@/hooks/queries/project/use-get-project";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
+import useProjectStore from "@/store/project.ts";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/projects/$projectId/general",
@@ -109,14 +112,21 @@ function RouteComponent() {
   const { data: workspace } = useActiveWorkspace();
   const { projectId: rawProjectId } = useParams({ strict: false });
   const projectId = rawProjectId ?? "";
-  const { data: project } = useGetProject({
-    id: projectId ?? "",
-    workspaceId: workspace?.id || "",
-  });
+  const { data: fetchedProject } = useGetTasks(projectId);
+  const { project, setProject } = useProjectStore();
+
+  useEffect(() => {
+    if (fetchedProject) {
+      setProject(fetchedProject);
+    }
+  }, [fetchedProject, setProject]);
 
   const { mutateAsync: updateProject } = useUpdateProject();
   const { mutateAsync: deleteProject, isPending: isDeleting } =
     useDeleteProject();
+  const { canManageProjects, canDeleteProjects } = useWorkspacePermission();
+  const canEdit = canManageProjects();
+  const canDelete = canDeleteProjects();
 
   const projectForm = useForm<ProjectFormValues>({
     resolver: standardSchemaResolver(projectSchema),
@@ -251,6 +261,7 @@ function RouteComponent() {
   }, [projectForm, saveProject]);
 
   useEffect(() => {
+    if (!canEdit) return;
     // Do not gate on formState.isDirty here: after setValue (e.g. icon pick), the
     // watch callback can run before RHF updates isDirty, so the debounced save never runs.
     const subscription = projectForm.watch(() => {
@@ -258,7 +269,7 @@ function RouteComponent() {
     });
 
     return () => subscription.unsubscribe();
-  }, [projectForm, debouncedSave]);
+  }, [projectForm, debouncedSave, canEdit]);
 
   useEffect(() => {
     return () => {
@@ -358,6 +369,7 @@ function RouteComponent() {
                       size="sm"
                       className="h-8 w-auto justify-start gap-2 font-normal"
                       title={t("settings:projectGeneral.pickIconTitle")}
+                      disabled={!canEdit}
                     >
                       {(() => {
                         const selectedKey =
@@ -449,6 +461,7 @@ function RouteComponent() {
                             placeholder={t(
                               "settings:projectGeneral.projectNamePlaceholder",
                             )}
+                            disabled={!canEdit}
                             {...field}
                           />
                         </FormControl>
@@ -482,6 +495,7 @@ function RouteComponent() {
                             placeholder={t(
                               "settings:projectGeneral.keyPlaceholder",
                             )}
+                            disabled={!canEdit}
                             {...field}
                           />
                         </FormControl>
@@ -513,6 +527,7 @@ function RouteComponent() {
                             placeholder={t(
                               "settings:projectGeneral.descriptionPlaceholder",
                             )}
+                            disabled={!canEdit}
                             {...field}
                           />
                         </FormControl>
@@ -523,42 +538,56 @@ function RouteComponent() {
                 />
               </form>
             </Form>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-md font-medium">
-              {t("settings:projectGeneral.dangerZone")}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {t("settings:projectGeneral.dangerZoneSubtitle")}
-            </p>
-          </div>
-
-          <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
+            <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <p className="text-sm font-medium">
-                  {t("settings:projectGeneral.deleteProject")}
+                  {t("settings:projectGeneral.importExportTasks")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t("settings:projectGeneral.deleteProjectDescription")}
+                  {t("settings:projectGeneral.importExportTasksDescription")}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive transition-colors"
-                type="button"
-                onClick={() => setIsDeleteModalOpen(true)}
-                disabled={!project}
-              >
-                {t("settings:projectGeneral.deleteProject")}
-              </Button>
+              {project && <TasksImportExport project={project} />}
             </div>
           </div>
         </div>
+
+        {canDelete && (
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <h2 className="text-md font-medium">
+                {t("settings:projectGeneral.dangerZone")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("settings:projectGeneral.dangerZoneSubtitle")}
+              </p>
+            </div>
+
+            <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">
+                    {t("settings:projectGeneral.deleteProject")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings:projectGeneral.deleteProjectDescription")}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive transition-colors"
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={!project}
+                >
+                  {t("settings:projectGeneral.deleteProject")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <AlertDialog
           open={isDeleteModalOpen}

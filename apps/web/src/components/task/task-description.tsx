@@ -14,12 +14,18 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import {
+  BetweenHorizontalEnd,
+  BetweenHorizontalStart,
+  BetweenVerticalEnd,
+  BetweenVerticalStart,
   Bold,
   Braces,
   Check,
   ChevronDown,
   Code,
+  Columns3,
   Copy,
+  Grid2x2X,
   Heading2,
   Italic,
   Link2,
@@ -28,6 +34,7 @@ import {
   ListTodo,
   Paperclip,
   Quote,
+  Rows3,
   Strikethrough,
   Table2,
   Underline as UnderlineIcon,
@@ -49,6 +56,7 @@ import {
 } from "@/components/ui/menu";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
 import useGetTask from "@/hooks/queries/task/use-get-task";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import debounce from "@/lib/debounce";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
@@ -256,6 +264,8 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const { t } = useTranslation();
   const { data: task } = useGetTask(taskId);
   const { mutateAsync: updateTaskDescription } = useUpdateTaskDescription();
+  const { canManageTasks } = useWorkspacePermission();
+  const canEdit = canManageTasks();
 
   const editorShellRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -756,6 +766,15 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       editor.state.tr.setMeta(SHIKI_CODEBLOCK_REFRESH_META, true),
     );
   }, [editor, shikiHighlighter]);
+
+  // Toggle Tiptap's editable flag based on workspace permission. When the
+  // user can't manage tasks, the description renders as read-only — slash
+  // menus, paste handlers, and toolbar buttons all become no-ops because
+  // the editor refuses content mutations.
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(canEdit);
+  }, [editor, canEdit]);
 
   useEffect(() => {
     if (!editor || typeof document === "undefined") return;
@@ -1597,6 +1616,104 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         </BubbleMenu>
       )}
 
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          pluginKey="kaneo-table-bubble"
+          className="kaneo-tiptap-bubble"
+          shouldShow={({ editor: activeEditor, from, to }) =>
+            activeEditor.isActive("table") && from === to
+          }
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="kaneo-tiptap-bubble-btn"
+            title={t("tasks:editor.table.addColumnBefore", {
+              defaultValue: "Insert column left",
+            })}
+            onClick={() => editor.chain().focus().addColumnBefore().run()}
+          >
+            <BetweenVerticalStart className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="kaneo-tiptap-bubble-btn"
+            title={t("tasks:editor.table.addColumnAfter", {
+              defaultValue: "Insert column right",
+            })}
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+          >
+            <BetweenVerticalEnd className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className={cn("kaneo-tiptap-bubble-btn", "text-destructive")}
+            title={t("tasks:editor.table.deleteColumn", {
+              defaultValue: "Delete column",
+            })}
+            onClick={() => editor.chain().focus().deleteColumn().run()}
+          >
+            <Columns3 className="size-3.5" />
+          </Button>
+          <span className="kaneo-tiptap-bubble-separator" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="kaneo-tiptap-bubble-btn"
+            title={t("tasks:editor.table.addRowBefore", {
+              defaultValue: "Insert row above",
+            })}
+            onClick={() => editor.chain().focus().addRowBefore().run()}
+          >
+            <BetweenHorizontalStart className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="kaneo-tiptap-bubble-btn"
+            title={t("tasks:editor.table.addRowAfter", {
+              defaultValue: "Insert row below",
+            })}
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+          >
+            <BetweenHorizontalEnd className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className={cn("kaneo-tiptap-bubble-btn", "text-destructive")}
+            title={t("tasks:editor.table.deleteRow", {
+              defaultValue: "Delete row",
+            })}
+            onClick={() => editor.chain().focus().deleteRow().run()}
+          >
+            <Rows3 className="size-3.5" />
+          </Button>
+          <span className="kaneo-tiptap-bubble-separator" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className={cn("kaneo-tiptap-bubble-btn", "text-destructive")}
+            title={t("tasks:editor.table.deleteTable", {
+              defaultValue: "Delete table",
+            })}
+            onClick={() => editor.chain().focus().deleteTable().run()}
+          >
+            <Grid2x2X className="size-3.5" />
+          </Button>
+        </BubbleMenu>
+      )}
+
       {editor && slashMenu && (
         <div
           className="kaneo-tiptap-slash-menu"
@@ -1755,17 +1872,19 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         onMouseMove={handleEditorMouseMove}
         onMouseLeave={handleEditorMouseLeave}
       />
-      <button
-        type="button"
-        className="kaneo-editor-quick-attach"
-        onMouseDown={(event) => {
-          event.preventDefault();
-        }}
-        onClick={() => openImagePicker(editor)}
-        aria-label={t("tasks:detail.editor.attachFile")}
-      >
-        <Paperclip className="size-3.5" />
-      </button>
+      {canEdit && (
+        <button
+          type="button"
+          className="kaneo-editor-quick-attach"
+          onMouseDown={(event) => {
+            event.preventDefault();
+          }}
+          onClick={() => openImagePicker(editor)}
+          aria-label={t("tasks:detail.editor.attachFile")}
+        >
+          <Paperclip className="size-3.5" />
+        </button>
+      )}
       {isDragActive && (
         <div className="kaneo-editor-drop-indicator">
           <span>{t("tasks:detail.editor.dropToUpload")}</span>

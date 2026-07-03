@@ -42,7 +42,8 @@
 			"macedonian": "Македонски",
 			"french": "Француски",
 			"spanish": "Шпански",
-			"dutch": "Холандски"
+			"dutch": "Холандски",
+			"korean": "Корејски"
 		},
 		"people": {
 			"someone": "Некој",
@@ -149,7 +150,11 @@
 			"oidcError": "Неуспешна најава со OIDC",
 			"googleError": "Неуспешна најава со Google",
 			"githubError": "Неуспешна најава со GitHub",
-			"discordError": "Неуспешна најава со Discord"
+			"discordError": "Неуспешна најава со Discord",
+			"errors": {
+				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
+				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
+			}
 		},
 		"providers": {
 			"google": "Google",
@@ -581,7 +586,9 @@
 				"keyShort": "Клучот мора да има најмалку 2 знаци",
 				"keyMax": "Клучот мора да има најмногу 8 знаци",
 				"iconRequired": "Иконата е задолжителна"
-			}
+			},
+			"importExportTasks": "Импортирање/Експортирање",
+			"importExportTasksDescription": "Импортирање/Експортирање на задачи"
 		},
 		"projectIntegrations": {
 			"pageTitle": "Интеграции на проект",
@@ -645,7 +652,10 @@
 			"on": "Вклучено",
 			"off": "Исклучено",
 			"newColumnPlaceholder": "Име на нова колона...",
-			"add": "Додади"
+			"add": "Додади",
+			"toastIconUpdated": "Column icon updated",
+			"pickIconTitle": "Pick column icon",
+			"searchIconsPlaceholder": "Search icons..."
 		},
 		"githubIntegration": {
 			"validation": {
@@ -1036,7 +1046,8 @@
 			"members": "Членови",
 			"invitations": "Покани",
 			"more": "Повеќе",
-			"myTasks": "My tasks"
+			"myTasks": "My tasks",
+			"backToBoard": "Назад на табла"
 		},
 		"projectList": {
 			"viewProject": "Погледни проект",
@@ -1152,6 +1163,10 @@
 				"title": "Следењето на време е започнато",
 				"contentWithTask": "Следењето на време е започнато на задачата: {{taskTitle}}",
 				"contentWithoutTask": "Следењето на време е започнато на задача"
+			},
+			"task_mention": {
+				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		}
 	},
@@ -1251,7 +1266,9 @@
 					"yaml": "YAML"
 				}
 			}
-		}
+		},
+		"created": "ја создаде задачата",
+		"moved": "ја премести задачата од \"{{from}}\" во \"{{to}}\""
 	},
 	"tasks": {
 		"status": {
@@ -1278,7 +1295,9 @@
 		},
 		"common": {
 			"selectTask": "Избери задача",
-			"loadingTask": "Се вчитува задача..."
+			"loadingTask": "Се вчитува задача...",
+			"taskNotFound": "Задачата не е пронајдена",
+			"taskNotFoundDescription": "Задачата што ја барате не постои или е избришана."
 		},
 		"detail": {
 			"subtaskOf": "Подзадача на",
@@ -1399,7 +1418,8 @@
 			"selectTask": "Избери задача за поврзување",
 			"types": {
 				"blocks": "блокира",
-				"related": "е поврзана со"
+				"related": "е поврзана со",
+				"blocked_by": "blocked by"
 			}
 		},
 		"subtasks": {
@@ -1778,7 +1798,8 @@
 				"complete": "Завршен",
 				"inProgress": "Во тек"
 			},
-			"noDueDate": "Без краен рок"
+			"noDueDate": "Без краен рок",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one."
 		},
 		"search": {
 			"pageTitle": "Пребарување",
@@ -1818,7 +1839,8 @@
 		"roles": {
 			"owner": "Сопственик",
 			"admin": "Администратор",
-			"member": "Член"
+			"member": "Член",
+			"viewer": "Viewer"
 		},
 		"members": {
 			"pageTitle": "Членови",
@@ -1853,7 +1875,9 @@
 			"removeSuccess": "Членот на тимот е успешно отстранет",
 			"removeError": "Неуспешно отстранување на член на тим",
 			"cancelInviteSuccess": "Поканата е успешно откажана",
-			"cancelInviteError": "Неуспешно откажување на покана"
+			"cancelInviteError": "Неуспешно откажување на покана",
+			"roleUpdateError": "Failed to update role",
+			"roleUpdateSuccess": "Role updated"
 		}
 	},
 	"publicProject": {
