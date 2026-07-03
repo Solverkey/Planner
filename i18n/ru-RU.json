@@ -1793,6 +1793,12 @@
 					"failed": "Failed to add time entry",
 					"success": "Time entry added"
 				}
+			},
+			"project": {
+				"noPendingTask": "No pending tasks to track",
+				"start": "Track",
+				"startedOnTask": "Tracking time on \"{{title}}\"",
+				"startTooltip": "Start tracking the next pending task: {{title}}"
 			}
 		}
 	},

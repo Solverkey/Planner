@@ -1693,6 +1693,12 @@
 				},
 				"ariaPause": "Pausar cronómetro",
 				"ariaSwitch": "Cambiar tarea"
+			},
+			"project": {
+				"start": "Imputar",
+				"startTooltip": "Empezar a imputar tiempo en la siguiente tarea pendiente: {{title}}",
+				"noPendingTask": "No hay tareas pendientes para imputar",
+				"startedOnTask": "Imputando tiempo en «{{title}}»"
 			}
 		},
 		"myTasks": {

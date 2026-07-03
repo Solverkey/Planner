@@ -1733,6 +1733,12 @@
 					"failed": "Failed to add time entry",
 					"success": "Time entry added"
 				}
+			},
+			"project": {
+				"start": "Erfassen",
+				"startTooltip": "Zeiterfassung für die nächste offene Aufgabe starten: {{title}}",
+				"noPendingTask": "Keine offenen Aufgaben zum Erfassen",
+				"startedOnTask": "Zeiterfassung für „{{title}}“ läuft"
 			}
 		}
 	},
