@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardToolbar from "@/components/board/board-toolbar";
+import ProjectTimeTrackerButton from "@/components/board/project-time-tracker-button";
 import ProjectLayout from "@/components/common/project-layout";
 import KanbanBoard from "@/components/kanban-board";
 import ListView from "@/components/list-view";
@@ -213,7 +214,12 @@ function RouteComponent() {
       projectId={projectId}
       workspaceId={workspaceId}
       activeView="board"
-      headerActions={boardHeaderSearch}
+      headerActions={
+        <>
+          {boardHeaderSearch}
+          <ProjectTimeTrackerButton project={project} />
+        </>
+      }
     >
       <PageTitle
         title={`${project?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}

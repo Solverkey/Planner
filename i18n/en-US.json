@@ -1704,6 +1704,12 @@
 				},
 				"ariaPause": "Pause timer",
 				"ariaSwitch": "Switch task"
+			},
+			"project": {
+				"start": "Track",
+				"startTooltip": "Start tracking the next pending task: {{title}}",
+				"noPendingTask": "No pending tasks to track",
+				"startedOnTask": "Tracking time on \"{{title}}\""
 			}
 		},
 		"myTasks": {
