@@ -3,6 +3,13 @@ set -e
 
 echo "Starting environment variable replacement..."
 
+# Configure the nginx listen port. PaaS providers such as Railway inject a
+# $PORT that the container must bind to; fall back to 5173 for local/compose
+# and Kubernetes deployments that expect the historical default.
+LISTEN_PORT="${PORT:-5173}"
+sed -i "s#LISTEN_PORT_PLACEHOLDER#${LISTEN_PORT}#g" /etc/nginx/conf.d/default.conf
+echo "✅ Configured nginx to listen on port ${LISTEN_PORT}"
+
 # Process KANEO_API_URL first (with special handling)
 if [ ! -z "$KANEO_API_URL" ]; then
   echo "Found KANEO_API_URL: $KANEO_API_URL"
