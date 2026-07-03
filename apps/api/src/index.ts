@@ -119,15 +119,35 @@ function buildContentDisposition(filename: string) {
 export function createApp() {
   const app = new Hono<AppVariables>();
   const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim())
+    ? process.env.CORS_ORIGINS.split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean)
     : undefined;
+
+  // The configured web app is always a trusted origin. Deriving it from
+  // KANEO_CLIENT_URL avoids the common misconfiguration where the client URL is
+  // set but accidentally omitted from CORS_ORIGINS, which blocks the app's own
+  // API calls (and surfaces as "Origin ... is not allowed" in the browser).
+  let clientOrigin: string | undefined;
+  if (process.env.KANEO_CLIENT_URL) {
+    try {
+      clientOrigin = new URL(process.env.KANEO_CLIENT_URL).origin;
+    } catch {
+      clientOrigin = undefined;
+    }
+  }
+
+  const allowedOrigins =
+    corsOrigins && clientOrigin
+      ? [...new Set([...corsOrigins, clientOrigin])]
+      : corsOrigins;
 
   app.use(
     "*",
     cors({
       credentials: true,
       origin: (origin) => {
-        if (!corsOrigins) {
+        if (!allowedOrigins) {
           return origin || "*";
         }
 
@@ -135,7 +155,7 @@ export function createApp() {
           return null;
         }
 
-        return corsOrigins.includes(origin) ? origin : null;
+        return allowedOrigins.includes(origin) ? origin : null;
       },
     }),
   );
