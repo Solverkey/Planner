@@ -94,12 +94,12 @@ function getLocaleKey(locale?: string | null) {
 function getAuthEmailCopy(locale?: string | null) {
   return getLocaleKey(locale) === "de"
     ? {
-        magicLinkSubject: "Anmeldelink fuer Kaneo",
-        otpSubject: "Bestaetigungscode fuer Kaneo",
+        magicLinkSubject: "Anmeldelink fuer Planner Solverkey",
+        otpSubject: "Bestaetigungscode fuer Planner Solverkey",
       }
     : {
-        magicLinkSubject: "Login for Kaneo",
-        otpSubject: "Authentication code for Kaneo",
+        magicLinkSubject: "Login for Planner Solverkey",
+        otpSubject: "Authentication code for Planner Solverkey",
       };
 }
 
@@ -127,8 +127,8 @@ function getInvitationEmailSubject(
   workspaceName: string,
 ) {
   return getLocaleKey(locale) === "de"
-    ? `${inviterName} hat dich eingeladen, ${workspaceName} auf Kaneo beizutreten`
-    : `${inviterName} invited you to join ${workspaceName} on Kaneo`;
+    ? `${inviterName} hat dich eingeladen, ${workspaceName} auf Planner Solverkey beizutreten`
+    : `${inviterName} invited you to join ${workspaceName} on Planner Solverkey`;
 }
 
 export const auth = betterAuth({

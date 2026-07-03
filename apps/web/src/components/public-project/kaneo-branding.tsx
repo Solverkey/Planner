@@ -5,7 +5,7 @@ export function KaneoBranding() {
 
   return (
     <a
-      href="https://kaneo.app"
+      href="https://planner.solverkey.es"
       target="_blank"
       rel="noopener noreferrer"
       className="hover:text-foreground transition-colors"
