@@ -5,6 +5,7 @@ import { ArrowRight, Calendar, Filter, Plus, User, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BacklogListView from "@/components/backlog-list-view";
+import ProjectTimeTrackerButton from "@/components/board/project-time-tracker-button";
 import ProjectLayout from "@/components/common/project-layout";
 import SortControl from "@/components/common/sort-control";
 import PageTitle from "@/components/page-title";
@@ -353,6 +354,7 @@ function RouteComponent() {
       projectId={projectId}
       workspaceId={workspaceId}
       activeView="backlog"
+      headerActions={<ProjectTimeTrackerButton project={project} />}
     >
       <PageTitle
         title={t("tasks:backlog.pageTitle", { name: project?.name })}

@@ -14,6 +14,7 @@ import {
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import ProjectTimeTrackerButton from "@/components/board/project-time-tracker-button";
 import ProjectLayout from "@/components/common/project-layout";
 import { GanttTaskBar } from "@/components/gantt/gantt-task-bar";
 import PageTitle from "@/components/page-title";
@@ -173,6 +174,7 @@ function RouteComponent() {
       projectId={projectId}
       workspaceId={workspaceId}
       activeView="gantt"
+      headerActions={<ProjectTimeTrackerButton project={project} />}
     >
       <PageTitle
         title={t("tasks:gantt.pageTitle", { name: project?.name })}
