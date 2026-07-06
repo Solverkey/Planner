@@ -54,10 +54,10 @@ function toTime(value: string | Date | null | undefined) {
   return Number.isNaN(time) ? null : time;
 }
 
-// Chronological by due date (soonest first); tasks without a due date come
-// last, ordered by creation date. Optionally breaks ties by priority so the
-// "date and priority" mode surfaces higher-priority tasks (notably useful for
-// the many tasks that share no due date).
+// Order by due date (soonest first); tasks without a due date come last.
+// "date-priority" additionally breaks ties by priority (notably useful for the
+// many tasks that share no due date). Ties fall back to the task number for a
+// stable order.
 function compareMyTasks(a: MyTask, b: MyTask, sort: MyTasksSort) {
   const aDue = toTime(a.dueDate);
   const bDue = toTime(b.dueDate);
@@ -76,7 +76,7 @@ function compareMyTasks(a: MyTask, b: MyTask, sort: MyTasksSort) {
     if (aPriority !== bPriority) return aPriority - bPriority;
   }
 
-  return (toTime(a.createdAt) ?? 0) - (toTime(b.createdAt) ?? 0);
+  return (a.number ?? 0) - (b.number ?? 0);
 }
 
 type MyTask = {
@@ -86,7 +86,6 @@ type MyTask = {
   status: string;
   priority: string | null;
   dueDate: string | Date | null;
-  createdAt: string | Date;
   projectId: string;
   projectName: string | null;
   projectSlug: string | null;

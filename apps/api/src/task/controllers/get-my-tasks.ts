@@ -16,7 +16,6 @@ async function getMyTasks(userId: string) {
       status: taskTable.status,
       priority: taskTable.priority,
       dueDate: taskTable.dueDate,
-      createdAt: taskTable.createdAt,
       updatedAt: taskTable.updatedAt,
       projectId: taskTable.projectId,
       projectName: projectTable.name,
