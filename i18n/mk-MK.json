@@ -325,6 +325,16 @@
 				"nameRequired": "Името е задолжително",
 				"nameShort": "Името мора да има најмалку 2 знаци",
 				"invalidEmail": "Невалидна е-пошта"
+			},
+			"photo": {
+				"change": "Change photo",
+				"error": "Failed to update profile photo",
+				"hint": "Square image, up to 5 MB. It is resized automatically.",
+				"invalidType": "Please choose an image file",
+				"remove": "Remove photo",
+				"removed": "Profile photo removed",
+				"tooLarge": "Image is too large (max 5 MB)",
+				"updated": "Profile photo updated"
 			}
 		},
 		"notificationsPage": {
@@ -1689,7 +1699,11 @@
 				"start": "Start timer",
 				"switchAndStart": "Switch & start"
 			},
-			"untitledProject": "Untitled project"
+			"untitledProject": "Untitled project",
+			"sort": {
+				"date": "Date",
+				"datePriority": "Date & priority"
+			}
 		},
 		"timeTracking": {
 			"actions": {

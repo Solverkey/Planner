@@ -325,6 +325,16 @@
 				"nameRequired": "Name ist erforderlich",
 				"nameShort": "Der Name muss mindestens 2 Zeichen lang sein",
 				"invalidEmail": "Ungültige E-Mail-Adresse"
+			},
+			"photo": {
+				"change": "Foto ändern",
+				"remove": "Foto entfernen",
+				"hint": "Quadratisches Bild, bis 5 MB. Wird automatisch skaliert.",
+				"updated": "Profilfoto aktualisiert",
+				"removed": "Profilfoto entfernt",
+				"error": "Profilfoto konnte nicht aktualisiert werden",
+				"invalidType": "Bitte wähle eine Bilddatei",
+				"tooLarge": "Bild ist zu groß (max. 5 MB)"
 			}
 		},
 		"notificationsPage": {
@@ -1689,7 +1699,11 @@
 				"start": "Start timer",
 				"switchAndStart": "Switch & start"
 			},
-			"untitledProject": "Untitled project"
+			"untitledProject": "Untitled project",
+			"sort": {
+				"date": "Datum",
+				"datePriority": "Datum & Priorität"
+			}
 		},
 		"timeTracking": {
 			"actions": {

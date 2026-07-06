@@ -1282,6 +1282,46 @@
 								}
 							},
 							"required": ["nameRequired", "nameShort", "invalidEmail"]
+						},
+						"photo": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"change": {
+									"type": "string"
+								},
+								"remove": {
+									"type": "string"
+								},
+								"hint": {
+									"type": "string"
+								},
+								"updated": {
+									"type": "string"
+								},
+								"removed": {
+									"type": "string"
+								},
+								"error": {
+									"type": "string"
+								},
+								"invalidType": {
+									"type": "string"
+								},
+								"tooLarge": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"change",
+								"remove",
+								"hint",
+								"updated",
+								"removed",
+								"error",
+								"invalidType",
+								"tooLarge"
+							]
 						}
 					},
 					"required": [
@@ -1297,7 +1337,8 @@
 						"emailPlaceholder",
 						"updateSuccess",
 						"updateError",
-						"validation"
+						"validation",
+						"photo"
 					]
 				},
 				"notificationsPage": {
@@ -6977,6 +7018,19 @@
 								}
 							},
 							"required": ["startTimer", "pauseTimer"]
+						},
+						"sort": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"date": {
+									"type": "string"
+								},
+								"datePriority": {
+									"type": "string"
+								}
+							},
+							"required": ["date", "datePriority"]
 						}
 					},
 					"required": [
@@ -6986,7 +7040,8 @@
 						"empty",
 						"untitledProject",
 						"tooltip",
-						"aria"
+						"aria",
+						"sort"
 					]
 				}
 			},

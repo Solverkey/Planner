@@ -11,6 +11,9 @@ type UserPreferencesStore = {
   viewMode: "board" | "list";
   setViewMode: (mode: "board" | "list") => void;
 
+  myTasksSort: "date" | "date-priority";
+  setMyTasksSort: (sort: "date" | "date-priority") => void;
+
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
 
@@ -71,6 +74,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       viewMode: "board",
       setViewMode: (mode) => set({ viewMode: mode }),
+
+      myTasksSort: "date",
+      setMyTasksSort: (sort) => set({ myTasksSort: sort }),
 
       compactMode: false,
       setCompactMode: (compact) => set({ compactMode: compact }),

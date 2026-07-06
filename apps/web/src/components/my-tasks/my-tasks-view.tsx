@@ -1,5 +1,12 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight, Inbox, Pause, Play } from "lucide-react";
+import {
+  ArrowDownUp,
+  ChevronDown,
+  ChevronRight,
+  Inbox,
+  Pause,
+  Play,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +16,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +36,48 @@ import useGetMyTasks from "@/hooks/queries/task/use-get-my-tasks";
 import useGetActiveTimeEntry from "@/hooks/queries/time-entry/use-get-active-time-entry";
 import { formatDateMedium } from "@/lib/format";
 import { toast } from "@/lib/toast";
+import { useUserPreferencesStore } from "@/store/user-preferences";
+
+type MyTasksSort = "date" | "date-priority";
+
+const PRIORITY_ORDER: Record<string, number> = {
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+  "no-priority": 4,
+};
+
+function toTime(value: string | Date | null | undefined) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+// Chronological by due date (soonest first); tasks without a due date come
+// last, ordered by creation date. Optionally breaks ties by priority so the
+// "date and priority" mode surfaces higher-priority tasks (notably useful for
+// the many tasks that share no due date).
+function compareMyTasks(a: MyTask, b: MyTask, sort: MyTasksSort) {
+  const aDue = toTime(a.dueDate);
+  const bDue = toTime(b.dueDate);
+
+  if (aDue !== null && bDue !== null) {
+    if (aDue !== bDue) return aDue - bDue;
+  } else if (aDue !== null) {
+    return -1;
+  } else if (bDue !== null) {
+    return 1;
+  }
+
+  if (sort === "date-priority") {
+    const aPriority = PRIORITY_ORDER[a.priority ?? "no-priority"] ?? 4;
+    const bPriority = PRIORITY_ORDER[b.priority ?? "no-priority"] ?? 4;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+  }
+
+  return (toTime(a.createdAt) ?? 0) - (toTime(b.createdAt) ?? 0);
+}
 
 type MyTask = {
   id: string;
@@ -30,6 +86,7 @@ type MyTask = {
   status: string;
   priority: string | null;
   dueDate: string | Date | null;
+  createdAt: string | Date;
   projectId: string;
   projectName: string | null;
   projectSlug: string | null;
@@ -68,6 +125,7 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
   const { data: active } = useGetActiveTimeEntry();
   const startMutation = useStartTimeEntry();
   const stopMutation = useStopTimeEntry();
+  const { myTasksSort, setMyTasksSort } = useUserPreferencesStore();
 
   const [hideDone, setHideDone] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -106,10 +164,13 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
       }
     }
 
-    return Array.from(map.values()).sort((a, b) =>
-      a.projectName.localeCompare(b.projectName),
-    );
-  }, [workspaceTasks, hideDone, t]);
+    const grouped = Array.from(map.values());
+    for (const group of grouped) {
+      group.tasks.sort((a, b) => compareMyTasks(a, b, myTasksSort));
+    }
+
+    return grouped.sort((a, b) => a.projectName.localeCompare(b.projectName));
+  }, [workspaceTasks, hideDone, t, myTasksSort]);
 
   const totalCount = workspaceTasks.filter(
     (task) => !hideDone || task.status !== "done",
@@ -202,15 +263,41 @@ export default function MyTasksView({ workspaceId }: MyTasksViewProps) {
           {t("tasks:myTasks.summary.across")}{" "}
           {t("tasks:myTasks.summary.projects", { count: groups.length })}
         </span>
-        <Button
-          variant={hideDone ? "outline" : "secondary"}
-          size="xs"
-          onClick={() => setHideDone((v) => !v)}
-        >
-          {hideDone
-            ? t("tasks:myTasks.filter.showCompleted")
-            : t("tasks:myTasks.filter.hideCompleted")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="xs">
+                <ArrowDownUp className="size-3" />
+                {myTasksSort === "date"
+                  ? t("tasks:myTasks.sort.date")
+                  : t("tasks:myTasks.sort.datePriority")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={myTasksSort}
+                onValueChange={(value) => setMyTasksSort(value as MyTasksSort)}
+              >
+                <DropdownMenuRadioItem value="date">
+                  {t("tasks:myTasks.sort.date")}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="date-priority">
+                  {t("tasks:myTasks.sort.datePriority")}
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant={hideDone ? "outline" : "secondary"}
+            size="xs"
+            onClick={() => setHideDone((v) => !v)}
+          >
+            {hideDone
+              ? t("tasks:myTasks.filter.showCompleted")
+              : t("tasks:myTasks.filter.hideCompleted")}
+          </Button>
+        </div>
       </div>
 
       {groups.length === 0 ? (

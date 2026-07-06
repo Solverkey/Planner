@@ -1,13 +1,21 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef } from "react";
+import { Loader2, Trash2, Upload } from "lucide-react";
+import {
+  type ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import PageTitle from "@/components/page-title";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -20,6 +28,42 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import useUpdateUserProfile from "@/hooks/mutations/use-update-user-profile";
 import { toast } from "@/lib/toast";
+
+const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
+const PROFILE_IMAGE_SIZE = 256;
+
+// Center-crops to a square and downscales to a small JPEG data URL so the
+// avatar can be stored inline (via Better Auth's user.image) without needing a
+// separate object-storage backend to be configured.
+async function fileToSquareDataUrl(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Failed to read image"));
+    reader.readAsDataURL(file);
+  });
+
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error("Failed to decode image"));
+    el.src = dataUrl;
+  });
+
+  const side = Math.min(image.naturalWidth, image.naturalHeight);
+  const dimension = Math.min(PROFILE_IMAGE_SIZE, Math.max(1, side));
+  const canvas = document.createElement("canvas");
+  canvas.width = dimension;
+  canvas.height = dimension;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Canvas not supported");
+  }
+  const sx = (image.naturalWidth - side) / 2;
+  const sy = (image.naturalHeight - side) / 2;
+  ctx.drawImage(image, sx, sy, side, side, 0, 0, dimension, dimension);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/account/information",
@@ -51,6 +95,8 @@ function RouteComponent() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { mutateAsync: updateProfile } = useUpdateUserProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSavingRef = useRef(false);
   const queuedSaveRef = useRef<ProfileFormValues | null>(null);
@@ -164,6 +210,54 @@ function RouteComponent() {
     };
   }, []);
 
+  const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("settings:informationPage.photo.invalidType"));
+      return;
+    }
+    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+      toast.error(t("settings:informationPage.photo.tooLarge"));
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const image = await fileToSquareDataUrl(file);
+      await updateProfile({ image });
+      await queryClient.invalidateQueries({ queryKey: ["session"] });
+      toast.success(t("settings:informationPage.photo.updated"));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("settings:informationPage.photo.error"),
+      );
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setIsUploadingPhoto(true);
+    try {
+      await updateProfile({ image: "" });
+      await queryClient.invalidateQueries({ queryKey: ["session"] });
+      toast.success(t("settings:informationPage.photo.removed"));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("settings:informationPage.photo.error"),
+      );
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   return (
     <>
       <PageTitle title={t("settings:informationPage.pageTitle")} />
@@ -188,18 +282,56 @@ function RouteComponent() {
           </div>
 
           <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div className="space-y-0.5">
                 <p className="text-sm font-medium">
                   {t("settings:informationPage.profilePicture")}
                 </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings:informationPage.photo.hint")}
+                </p>
               </div>
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-                <AvatarFallback className="text-xs font-medium border border-border/30">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                {user?.image ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleRemovePhoto}
+                    disabled={isUploadingPhoto}
+                    aria-label={t("settings:informationPage.photo.remove")}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                >
+                  {isUploadingPhoto ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="size-3.5" />
+                  )}
+                  {t("settings:informationPage.photo.change")}
+                </Button>
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
+                  <AvatarFallback className="text-xs font-medium border border-border/30">
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
 
             <Separator />

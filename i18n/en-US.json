@@ -325,6 +325,16 @@
 				"nameRequired": "Name is required",
 				"nameShort": "Name must be at least 2 characters",
 				"invalidEmail": "Invalid email address"
+			},
+			"photo": {
+				"change": "Change photo",
+				"remove": "Remove photo",
+				"hint": "Square image, up to 5 MB. It is resized automatically.",
+				"updated": "Profile photo updated",
+				"removed": "Profile photo removed",
+				"error": "Failed to update profile photo",
+				"invalidType": "Please choose an image file",
+				"tooLarge": "Image is too large (max 5 MB)"
 			}
 		},
 		"notificationsPage": {
@@ -1759,6 +1769,10 @@
 			"aria": {
 				"startTimer": "Start timer",
 				"pauseTimer": "Pause timer"
+			},
+			"sort": {
+				"date": "Date",
+				"datePriority": "Date & priority"
 			}
 		}
 	},

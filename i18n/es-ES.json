@@ -324,6 +324,16 @@
 				"nameRequired": "El nombre es obligatorio",
 				"nameShort": "Tu nombre debe tener al menos 2 caracteres",
 				"invalidEmail": "Dirección de correo electrónico no válida"
+			},
+			"photo": {
+				"change": "Cambiar foto",
+				"remove": "Quitar foto",
+				"hint": "Imagen cuadrada, hasta 5 MB. Se redimensiona automáticamente.",
+				"updated": "Foto de perfil actualizada",
+				"removed": "Foto de perfil eliminada",
+				"error": "No se pudo actualizar la foto de perfil",
+				"invalidType": "Elige un archivo de imagen",
+				"tooLarge": "La imagen es demasiado grande (máx. 5 MB)"
 			}
 		},
 		"preferencesPage": {
@@ -1748,6 +1758,10 @@
 			"aria": {
 				"startTimer": "Iniciar cronómetro",
 				"pauseTimer": "Pausar cronómetro"
+			},
+			"sort": {
+				"date": "Fecha",
+				"datePriority": "Fecha y prioridad"
 			}
 		},
 		"move": {
