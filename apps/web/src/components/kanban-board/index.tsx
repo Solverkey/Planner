@@ -28,10 +28,13 @@ import TaskCard from "./task-card";
 
 type KanbanBoardProps = {
   project: ProjectWithTasks;
-  disableDragDrop?: boolean;
+  // When a non-manual sort is active, in-column reordering is meaningless
+  // (the sort dictates order), but dragging a card to another column to change
+  // its status stays enabled.
+  sortActive?: boolean;
 };
 
-function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
+function KanbanBoard({ project, sortActive = false }: KanbanBoardProps) {
   const queryClient = useQueryClient();
   const { setProject } = useProjectStore();
   const {
@@ -91,11 +94,11 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      activationConstraint: { distance: disableDragDrop ? 999999 : 8 },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: disableDragDrop ? 999999 : 250,
+        delay: 250,
         tolerance: 10,
       },
     }),
@@ -126,6 +129,52 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
+
+    // With an active sort, only allow moving a card to another column (status
+    // change). In-column reordering is ignored since the sort controls order.
+    if (sortActive) {
+      const sourceColumn = project.columns.find((col) =>
+        col.tasks.some((task) => task.id === activeId),
+      );
+      const destinationColumn = project.columns.find(
+        (col) =>
+          col.id === overId || col.tasks.some((task) => task.id === overId),
+      );
+
+      if (
+        !sourceColumn ||
+        !destinationColumn ||
+        sourceColumn.id === destinationColumn.id
+      ) {
+        return;
+      }
+
+      const movedTask = sourceColumn.tasks.find((task) => task.id === activeId);
+      if (!movedTask) return;
+
+      const newPosition = destinationColumn.tasks.length;
+      const updatedProject = produce(project, (draft) => {
+        const src = draft.columns?.find((col) => col.id === sourceColumn.id);
+        const dest = draft.columns?.find(
+          (col) => col.id === destinationColumn.id,
+        );
+        if (!src || !dest) return;
+        const idx = src.tasks.findIndex((task) => task.id === activeId);
+        if (idx === -1) return;
+        const [task] = src.tasks.splice(idx, 1);
+        task.status = dest.id;
+        task.position = newPosition;
+        dest.tasks.push(task);
+      });
+
+      setProject(updatedProject);
+      updateTask({
+        ...movedTask,
+        status: destinationColumn.id,
+        position: newPosition,
+      });
+      return;
+    }
 
     const updatedProject = produce(project, (draft) => {
       const sourceColumn = draft?.columns?.find((col) =>
