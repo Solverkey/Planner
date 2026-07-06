@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { SortConfig } from "@/lib/sort-tasks";
 
 type UserPreferencesStore = {
   theme: "light" | "dark" | "system";
@@ -14,9 +13,6 @@ type UserPreferencesStore = {
 
   myTasksSort: "date" | "date-priority";
   setMyTasksSort: (sort: "date" | "date-priority") => void;
-
-  boardSort: SortConfig;
-  setBoardSort: (sort: SortConfig) => void;
 
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
@@ -81,9 +77,6 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       myTasksSort: "date",
       setMyTasksSort: (sort) => set({ myTasksSort: sort }),
-
-      boardSort: { field: "position", direction: "asc" },
-      setBoardSort: (sort) => set({ boardSort: sort }),
 
       compactMode: false,
       setCompactMode: (compact) => set({ compactMode: compact }),

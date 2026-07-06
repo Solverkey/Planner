@@ -17,6 +17,7 @@ import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
+import type { SortConfig } from "@/lib/sort-tasks";
 import { sortTasks } from "@/lib/sort-tasks";
 import useProjectStore from "@/store/project";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -81,18 +82,20 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data } = useGetTasks(projectId);
   const { project, setProject } = useProjectStore();
-  const {
-    viewMode,
-    setViewMode,
-    boardSort: sort,
-    setBoardSort: setSort,
-  } = useUserPreferencesStore();
+  const { viewMode, setViewMode } = useUserPreferencesStore();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
   const [isBoardSearchMounted, setIsBoardSearchMounted] = useState(false);
   const [isBoardSearchVisible, setIsBoardSearchVisible] = useState(false);
   const [boardSearchInput, setBoardSearchInput] =
     useState<HTMLInputElement | null>(null);
+  // Board sort is intentionally session-scoped (not persisted): a non-position
+  // sort disables drag-and-drop, so resetting to manual order on reload keeps
+  // the board's core interaction working.
+  const [sort, setSort] = useState<SortConfig>({
+    field: "position",
+    direction: "asc",
+  });
 
   const { data: users } = useGetActiveWorkspaceUsers(workspaceId);
   const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(workspaceId);
