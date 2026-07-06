@@ -23,11 +23,18 @@ async function getProjects(workspaceId: string, includeArchived = false) {
     const completionPercentage =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    const dueDate = project.tasks.reduce((earliest: Date | null, task) => {
-      if (!earliest || (task.dueDate && task.dueDate < earliest))
-        return task.dueDate;
-      return earliest;
-    }, null);
+    const earliestTaskDueDate = project.tasks.reduce(
+      (earliest: Date | null, task) => {
+        if (!earliest || (task.dueDate && task.dueDate < earliest))
+          return task.dueDate;
+        return earliest;
+      },
+      null,
+    );
+
+    // An explicit project due date takes precedence over the date derived from
+    // its tasks (which stays as a fallback for projects without one set).
+    const dueDate = project.dueDate ?? earliestTaskDueDate;
 
     return {
       ...project,

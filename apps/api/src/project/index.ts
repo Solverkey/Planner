@@ -11,6 +11,7 @@ import getProjectCtrl from "./controllers/get-project";
 import getProjectsCtrl from "./controllers/get-projects";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
+import updateProjectDueDateCtrl from "./controllers/update-project-due-date";
 
 const project = new Hono<{
   Variables: {
@@ -163,6 +164,41 @@ const project = new Hono<{
         slug,
         description,
         isPublic,
+        workspaceId,
+      );
+      return c.json(updatedProject);
+    },
+  )
+  .put(
+    "/:id/due-date",
+    describeRoute({
+      operationId: "updateProjectDueDate",
+      tags: ["Projects"],
+      description:
+        "Set or clear a project's due date (overrides the date derived from its tasks). Pass null to clear.",
+      responses: {
+        200: {
+          description: "Project due date updated successfully",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({ dueDate: v.optional(v.nullable(v.string())) }),
+    ),
+    workspaceAccess.fromProject(),
+    requireWorkspacePermission({ project: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { dueDate = null } = c.req.valid("json");
+      const workspaceId = c.get("workspaceId");
+      const updatedProject = await updateProjectDueDateCtrl(
+        id,
+        dueDate ? new Date(dueDate) : null,
         workspaceId,
       );
       return c.json(updatedProject);

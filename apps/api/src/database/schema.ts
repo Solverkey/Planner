@@ -245,6 +245,7 @@ export const projectTable = pgTable(
     icon: text("icon").default("Layout"),
     name: text("name").notNull(),
     description: text("description"),
+    dueDate: timestamp("due_date", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     isPublic: boolean("is_public").default(false),
     archivedAt: timestamp("archived_at", { mode: "date" }),

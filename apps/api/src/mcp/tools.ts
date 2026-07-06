@@ -1091,4 +1091,51 @@ export function registerMcpTools(
         });
       }),
   );
+
+  // =========================================================================
+  // Projects
+  // =========================================================================
+
+  server.registerTool(
+    "list_projects",
+    {
+      description:
+        "List projects in a workspace, including statistics (completion, task count and due date). Useful to find a projectId. Pass includeArchived to include archived projects.",
+      inputSchema: z.object({
+        workspaceId: nonEmptyString,
+        includeArchived: z.boolean().optional(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/project/?workspaceId=${encodeURIComponent(args.workspaceId)}${
+            args.includeArchived ? "&includeArchived=true" : ""
+          }`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    "update_project_due_date",
+    {
+      description:
+        "Set or clear a project's due date. Pass null to clear (the project then falls back to the earliest task due date). Use ISO 8601 with offset, e.g. 2026-05-01T00:00:00Z.",
+      inputSchema: z.object({
+        projectId: nonEmptyString,
+        dueDate: nullableOptionalIsoDateTimeSchema,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/project/${encodeURIComponent(args.projectId)}/due-date`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ dueDate: args.dueDate ?? null }),
+          },
+        ),
+      ),
+  );
 }
