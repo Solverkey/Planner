@@ -30,7 +30,7 @@ import useUpdateUserProfile from "@/hooks/mutations/use-update-user-profile";
 import { toast } from "@/lib/toast";
 
 const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
-const PROFILE_IMAGE_SIZE = 256;
+const PROFILE_IMAGE_SIZE = 128;
 
 // Center-crops to a square and downscales to a small JPEG data URL so the
 // avatar can be stored inline (via Better Auth's user.image) without needing a
@@ -62,7 +62,7 @@ async function fileToSquareDataUrl(file: File): Promise<string> {
   const sx = (image.naturalWidth - side) / 2;
   const sy = (image.naturalHeight - side) / 2;
   ctx.drawImage(image, sx, sy, side, side, 0, 0, dimension, dimension);
-  return canvas.toDataURL("image/jpeg", 0.85);
+  return canvas.toDataURL("image/jpeg", 0.8);
 }
 
 export const Route = createFileRoute(

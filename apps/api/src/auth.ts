@@ -453,9 +453,12 @@ export const auth = betterAuth({
     openAPI(),
   ],
   session: {
+    // Cookie-cache stores the full user object (including `image`) in a cookie.
+    // Avatars are saved as data URLs on `user.image`, so caching would bloat
+    // the Cookie header past the server limit and return HTTP 431 on every
+    // request. Read the session from the DB instead to keep cookies small.
     cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60,
+      enabled: false,
     },
   },
   rateLimit: {
