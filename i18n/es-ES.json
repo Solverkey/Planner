@@ -1177,6 +1177,18 @@
 			"task_mention": {
 				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
 				"title": "{{mentionerName}} mentioned you"
+			},
+			"task_title_changed": {
+				"title": "Título de tarea cambiado",
+				"content": "La tarea \"{{oldTitle}}\" pasó a llamarse \"{{taskTitle}}\""
+			},
+			"task_priority_changed": {
+				"title": "Prioridad de tarea cambiada",
+				"content": "La tarea \"{{taskTitle}}\" cambió su prioridad de \"{{oldPriority}}\" a \"{{newPriority}}\""
+			},
+			"task_due_date_changed": {
+				"title": "Fecha de vencimiento cambiada",
+				"content": "La tarea \"{{taskTitle}}\" actualizó su fecha de vencimiento"
 			}
 		}
 	},

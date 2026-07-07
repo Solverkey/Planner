@@ -115,6 +115,39 @@ function buildDeliveryContent(notification: {
           : "A task was assigned to you in Kaneo.",
       };
     }
+    case "task_title_changed": {
+      const taskTitle = getStringValue(notification.eventData, "taskTitle");
+      const oldTitle = getStringValue(notification.eventData, "oldTitle");
+      return {
+        title: "Task title changed",
+        body:
+          taskTitle && oldTitle
+            ? `A task assigned to you was renamed from "${oldTitle}" to "${taskTitle}".`
+            : "A task assigned to you was updated.",
+      };
+    }
+    case "task_priority_changed": {
+      const taskTitle = getStringValue(notification.eventData, "taskTitle");
+      const newPriority = getStringValue(notification.eventData, "newPriority");
+      return {
+        title: "Task priority changed",
+        body:
+          taskTitle && newPriority
+            ? `"${taskTitle}" priority was changed to ${newPriority}.`
+            : "A task assigned to you had its priority changed.",
+      };
+    }
+    case "task_due_date_changed": {
+      const taskTitle = getStringValue(notification.eventData, "taskTitle");
+      const newDueDate = getStringValue(notification.eventData, "newDueDate");
+      return {
+        title: "Task due date changed",
+        body:
+          taskTitle && newDueDate
+            ? `"${taskTitle}" due date was changed to ${newDueDate}.`
+            : "A task assigned to you had its due date changed.",
+      };
+    }
     case "time_entry_created": {
       const taskTitle = getStringValue(notification.eventData, "taskTitle");
       return {

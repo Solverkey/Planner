@@ -1177,6 +1177,18 @@
 			"task_mention": {
 				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}",
 				"title": "{{mentionerName}} mentioned you"
+			},
+			"task_title_changed": {
+				"title": "Aufgabentitel geändert",
+				"content": "Aufgabe \"{{oldTitle}}\" wurde in \"{{taskTitle}}\" umbenannt"
+			},
+			"task_priority_changed": {
+				"title": "Aufgabenpriorität geändert",
+				"content": "Aufgabe \"{{taskTitle}}\" Priorität von \"{{oldPriority}}\" auf \"{{newPriority}}\" geändert"
+			},
+			"task_due_date_changed": {
+				"title": "Fälligkeitsdatum geändert",
+				"content": "Aufgabe \"{{taskTitle}}\" Fälligkeitsdatum wurde aktualisiert"
 			}
 		}
 	},

@@ -282,6 +282,121 @@ subscribeToEvent<{
 });
 
 subscribeToEvent<{
+  taskId: string;
+  userId: string;
+  oldTitle: string;
+  newTitle: string;
+}>("task.title_changed", async (data) => {
+  const [task] = await db
+    .select({
+      assigneeId: taskTable.userId,
+      projectId: taskTable.projectId,
+    })
+    .from(taskTable)
+    .where(eq(taskTable.id, data.taskId))
+    .limit(1);
+
+  if (!task?.assigneeId || task.assigneeId === data.userId) return;
+
+  const [project] = await db
+    .select({ workspaceId: projectTable.workspaceId })
+    .from(projectTable)
+    .where(eq(projectTable.id, task.projectId))
+    .limit(1);
+
+  await createNotification({
+    userId: task.assigneeId,
+    type: "task_title_changed",
+    eventData: {
+      taskTitle: data.newTitle,
+      oldTitle: data.oldTitle,
+      projectId: task.projectId,
+      workspaceId: project?.workspaceId ?? null,
+    },
+    resourceId: data.taskId,
+    resourceType: "task",
+  });
+});
+
+subscribeToEvent<{
+  taskId: string;
+  userId: string;
+  oldPriority: string | null;
+  newPriority: string;
+  title: string;
+}>("task.priority_changed", async (data) => {
+  const [task] = await db
+    .select({
+      assigneeId: taskTable.userId,
+      projectId: taskTable.projectId,
+    })
+    .from(taskTable)
+    .where(eq(taskTable.id, data.taskId))
+    .limit(1);
+
+  if (!task?.assigneeId || task.assigneeId === data.userId) return;
+
+  const [project] = await db
+    .select({ workspaceId: projectTable.workspaceId })
+    .from(projectTable)
+    .where(eq(projectTable.id, task.projectId))
+    .limit(1);
+
+  await createNotification({
+    userId: task.assigneeId,
+    type: "task_priority_changed",
+    eventData: {
+      taskTitle: data.title,
+      oldPriority: data.oldPriority,
+      newPriority: data.newPriority,
+      projectId: task.projectId,
+      workspaceId: project?.workspaceId ?? null,
+    },
+    resourceId: data.taskId,
+    resourceType: "task",
+  });
+});
+
+subscribeToEvent<{
+  taskId: string;
+  userId: string;
+  oldDueDate: Date | null;
+  newDueDate: Date | null;
+  title: string;
+}>("task.due_date_changed", async (data) => {
+  const [task] = await db
+    .select({
+      assigneeId: taskTable.userId,
+      projectId: taskTable.projectId,
+    })
+    .from(taskTable)
+    .where(eq(taskTable.id, data.taskId))
+    .limit(1);
+
+  if (!task?.assigneeId || task.assigneeId === data.userId) return;
+
+  const [project] = await db
+    .select({ workspaceId: projectTable.workspaceId })
+    .from(projectTable)
+    .where(eq(projectTable.id, task.projectId))
+    .limit(1);
+
+  await createNotification({
+    userId: task.assigneeId,
+    type: "task_due_date_changed",
+    eventData: {
+      taskTitle: data.title,
+      oldDueDate: data.oldDueDate?.toISOString() ?? null,
+      newDueDate: data.newDueDate?.toISOString() ?? null,
+      projectId: task.projectId,
+      workspaceId: project?.workspaceId ?? null,
+    },
+    resourceId: data.taskId,
+    resourceType: "task",
+  });
+});
+
+subscribeToEvent<{
   timeEntryId: string;
   taskId: string;
   userId: string;

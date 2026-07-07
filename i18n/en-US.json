@@ -1177,6 +1177,18 @@
 			"task_mention": {
 				"title": "{{mentionerName}} mentioned you",
 				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}"
+			},
+			"task_title_changed": {
+				"title": "Task title changed",
+				"content": "Task \"{{oldTitle}}\" was renamed to \"{{taskTitle}}\""
+			},
+			"task_priority_changed": {
+				"title": "Task priority changed",
+				"content": "Task \"{{taskTitle}}\" priority changed from \"{{oldPriority}}\" to \"{{newPriority}}\""
+			},
+			"task_due_date_changed": {
+				"title": "Task due date changed",
+				"content": "Task \"{{taskTitle}}\" due date was updated"
 			}
 		}
 	},

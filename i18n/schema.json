@@ -4711,6 +4711,45 @@
 								}
 							},
 							"required": ["title", "content"]
+						},
+						"task_title_changed": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"task_priority_changed": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"task_due_date_changed": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
 						}
 					},
 					"required": [
@@ -4719,7 +4758,10 @@
 						"task_status_changed",
 						"task_assignee_changed",
 						"time_entry_created",
-						"task_mention"
+						"task_mention",
+						"task_title_changed",
+						"task_priority_changed",
+						"task_due_date_changed"
 					]
 				}
 			},
