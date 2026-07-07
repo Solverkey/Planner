@@ -1093,29 +1093,8 @@ export function registerMcpTools(
   );
 
   // =========================================================================
-  // Projects
+  // Projects (extra)
   // =========================================================================
-
-  server.registerTool(
-    "list_projects",
-    {
-      description:
-        "List projects in a workspace, including statistics (completion, task count and due date). Useful to find a projectId. Pass includeArchived to include archived projects.",
-      inputSchema: z.object({
-        workspaceId: nonEmptyString,
-        includeArchived: z.boolean().optional(),
-      }),
-    },
-    async (args) =>
-      run(() =>
-        client.json(
-          `/api/project/?workspaceId=${encodeURIComponent(args.workspaceId)}${
-            args.includeArchived ? "&includeArchived=true" : ""
-          }`,
-          { method: "GET" },
-        ),
-      ),
-  );
 
   server.registerTool(
     "update_project_due_date",
